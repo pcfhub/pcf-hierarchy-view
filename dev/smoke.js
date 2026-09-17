@@ -63,6 +63,7 @@ const root = path.join(__dirname, '..');
 const dom = require('./dom.js');
 const host = require('./host.js');
 const clock = require('./clock.js');
+const fixture = require('./fixture.js');
 
 const BUNDLE = path.join(root, 'out', 'controls', 'HierarchyView', 'bundle.js');
 
@@ -226,11 +227,18 @@ function disposeAll() {
 
 function mount(options) {
     const container = dom.createElement('div');
-    const calls = [];
+    /*
+     * What is the *instance's* rather than the render's: the call log, the
+     * organisation URL and the rows behind the Web API. `createContext` runs
+     * per render, so these are decided once here and handed to every context
+     * this mount builds — `update()` included, which used to drop `calls` and
+     * so could not record what a re-render made the control do.
+     */
+    const site = { calls: [], clientUrl: options.clientUrl || host.nextClientUrl(), fixture: options.fixture || fixture };
     // `getString` first, so a single assertion can override it — the marked key
     // proves a string came from the .resx, but it cannot prove a `{0}` was
     // substituted, because a marked key has no `{0}` in it to substitute.
-    const context = host.createContext({ getString: marked, ...options, calls });
+    const context = host.createContext({ getString: marked, ...options, ...site });
     const instance = new registration.ctor();
 
     let notifications = 0;
@@ -258,10 +266,12 @@ function mount(options) {
         props: () => (element && element.props) || {},
         outputs: () => instance.getOutputs(),
         notifications: () => notifications,
-        /** `trackContainerResize` / `setFullScreen` calls the control made. */
-        calls: () => calls,
+        /** Every platform call the control made, on any pass. */
+        calls: () => site.calls,
+        /** The organisation URL this instance's `page.getClientUrl()` answers. */
+        clientUrl: site.clientUrl,
         /** Re-render in a new state, as the platform does on every change. */
-        update: (next) => instance.updateView(host.createContext({ getString: marked, ...options, ...next })),
+        update: (next) => instance.updateView(host.createContext({ getString: marked, ...options, ...site, ...next })),
         /** Unmount, as the platform does when the form closes or navigates. */
         destroy: () => {
             instance.destroy();
@@ -287,328 +297,436 @@ if (typeof registration.ctor !== 'function') {
 }
 
 /* ======================================================================== *
- *  WORKED EXAMPLE — replace everything below with assertions about your own
- *  control. It exercises the scaffolded field control, whose whole job is to
- *  render one text input and honour the states a form puts it in.
+ *  HIERARCHY VIEW — what the control decides, asserted two ways.
  *
- *  It comes in two halves because the scaffolded control does. A **standard**
- *  control writes into the container it was handed, so the assertions read the
- *  DOM it built. A **virtual** one returns an element, so they read the props
- *  it passed down — which is the better test of the two: the props are the
- *  control's decisions, where the DOM is one rendering of them.
+ *  The **pure modules** (`query/`, `tree/`, `sample/`, `data/`, `platform.ts`)
+ *  are transpiled straight from source and driven directly: the exact FetchXML
+ *  a server would receive, the chain put in order, every reducer transition,
+ *  the two live sources against the rig's Web API. The **bundle** is mounted
+ *  through `mount()` and read through the props it hands the component, which
+ *  are its decisions about the host: which of the seven modes, which route,
+ *  what key the tree is built from.
  *
- *  Keep the half that matches your control and delete the other. What follows
- *  both halves applies either way.
+ *  What neither can prove: that a real form's `retrieveMultipleRecords` takes
+ *  the FetchXML at all, or how it wants it encoded — SPEC.md's P1, and every
+ *  other row of its *Measured* table.
  * ======================================================================== */
 
-const plain = mount({});
+const ts = require(path.join(root, 'node_modules', 'typescript'));
 
-if (plain.element !== undefined) {
-    /* ------------------------------------------------- a virtual control */
+/**
+ * Render an element all the way down with `react-dom/server`, which needs no
+ * DOM. Fluent is the stand-in, so a component renders as
+ * `<div data-fluent="Name">`; the assertions are about what the control put
+ * in the markup, never about Fluent. Effects do not run here, so this reaches
+ * the synchronous states only — the tree after loading is rendered through
+ * `TreeRow` from reducer state below.
+ */
+function renderDeep(element) {
+    if (element === undefined || element === null || React === null) {
+        return null;
+    }
 
-    check(
-        'hands the component the value the platform supplied',
-        plain.props().value === 'Contoso Ltd',
-        JSON.stringify(plain.props().value),
-    );
+    const server = require(path.join(root, 'node_modules', 'react-dom', 'server'));
+    const warn = console.error;
+    console.error = () => {};
 
-    /*
-     * The information bug. A user denied read access gets `raw === null`, which
-     * is indistinguishable from an empty column unless `security.readable` is
-     * checked — so an unchecked control renders "no value" where the truth is
-     * "not allowed to see it".
-     */
-    const denied = mount({ security: 'no-access', value: null });
+    try {
+        return server.renderToStaticMarkup(element);
+    } finally {
+        console.error = warn;
+    }
+}
+const { Module } = require('module');
+const src = path.join(root, 'HierarchyView');
 
-    check('a column the user cannot read is marked unreadable', denied.props().readable === false);
+/**
+ * Transpile one source file and evaluate it as its own module. Relative
+ * imports come back through here; `react` is the React the bundle got;
+ * `@fluentui/react-components` is the same stand-in Proxy the bundle got, so a
+ * transpiled component renders to `<div data-fluent="Name">` too.
+ */
+const moduleCache = new Map();
 
-    check(
-        'and the message it will show comes from the .resx, not from the source',
-        denied.props().noAccessText === 'resx:HierarchyView_NoAccess',
-        denied.props().noAccessText,
-    );
+function load(name) {
+    if (moduleCache.has(name)) {
+        return moduleCache.get(name).exports;
+    }
 
-    /*
-     * Two independent reasons to be read-only, and conflating them is a real
-     * bug: the form's `isControlDisabled` and the column's `security.editable`.
-     * This asserts the second on a form that is otherwise editable.
-     */
-    check(
-        'a read-only column disables the control on an editable form',
-        mount({ security: 'read-only' }).props().disabled === true,
-    );
+    const file = path.join(src, `${name}.ts${fs.existsSync(path.join(src, `${name}.tsx`)) ? 'x' : ''}`);
+    const source = fs.readFileSync(file, 'utf8');
+    const { outputText, diagnostics } = ts.transpileModule(source, {
+        fileName: file,
+        compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2019, esModuleInterop: true, jsx: ts.JsxEmit.React },
+        reportDiagnostics: true,
+    });
 
-    /*
-     * A column with no profile arrives as an *object* with `secured: false` on
-     * a real form (measured 2026-09-13), and `undefined` on other hosts. A read
-     * of `security.readable` as a boolean is right on both — and wrong on the
-     * third shape, an unmapped optional bound property's `{}`. Only an
-     * explicit `false` is a denial.
-     */
-    check(
-        'an unsecured column reported as an object, not undefined, is readable and editable',
-        mount({ security: 'unsecured' }).props().readable === true
-            && mount({ security: 'unsecured' }).props().disabled === false,
-    );
+    if (diagnostics && diagnostics.length > 0) {
+        throw new Error(`${name}: ${diagnostics.map((d) => ts.flattenDiagnosticMessageText(d.messageText, '\n')).join('\n')}`);
+    }
 
-    /*
-     * The platform's own validation. A failing business rule is silent inside a
-     * code component unless the control passes it on.
-     */
-    check(
-        'a validation error reaches the component',
-        mount({ error: true }).props().errorMessage === host.DEFAULTS.errorMessage,
-        mount({ error: true }).props().errorMessage,
-    );
+    const mod = new Module(file, module);
+    mod.filename = file;
+    mod.paths = Module._nodeModulePaths(src);
+    moduleCache.set(name, mod);
+    mod.require = function (request) {
+        if (request.startsWith('.')) {
+            return load(path.posix.normalize(path.posix.join(path.posix.dirname(name), request)));
+        }
+        if (request === 'react') {
+            return React;
+        }
+        if (request === '@fluentui/react-components') {
+            return fluent;
+        }
+        return Module.prototype.require.call(this, request);
+    };
+    mod._compile(outputText, file);
 
-    check('and there is none to show when the platform reported none', plain.props().errorMessage === null);
-
-    /*
-     * The canvas/model-driven split, which is what every `?.` in the control is
-     * about. A canvas app publishes no column metadata, and a control that
-     * requires it breaks on a host half its users are on.
-     */
-    check(
-        'does not invent a maxLength on a host that publishes no column metadata',
-        mount({ host: 'canvas' }).props().maxLength === undefined,
-        String(mount({ host: 'canvas' }).props().maxLength),
-    );
-
-    /*
-     * The accessible name comes from the maker's label for this field, not from
-     * the .resx — the resource string cannot know what the field is called on
-     * this form, so it is the fallback rather than the default.
-     */
-    check("passes down the form's own label", plain.props().label === 'Account name');
-
-    check('and a fallback for a form that gives none', plain.props().fallbackLabel === 'resx:HierarchyView_Name');
-
-    // The edit path: the component reports a change, the control notifies, and
-    // what it hands back is what the platform writes to the column.
-    const edited = mount({});
-
-    edited.props().onChange('Fabrikam');
-
-    check('an edit notifies the platform exactly once', edited.notifications() === 1);
-
-    check(
-        'and getOutputs hands back what was typed',
-        edited.outputs().value === 'Fabrikam',
-        JSON.stringify(edited.outputs()),
-    );
-} else {
-    /* ------------------------------------------------ a standard control */
-
-    check(
-        'renders an input inside the field surface',
-        Boolean(plain.find('.HierarchyView-field')) && Boolean(plain.find('input')),
-    );
-
-    check(
-        'shows the value the platform supplied',
-        plain.find('input') && plain.find('input').value === 'Contoso Ltd',
-        plain.find('input') && plain.find('input').value,
-    );
-
-    /*
-     * The accessible name comes from the maker's label for this field, not from
-     * the .resx — the resource string cannot know what the field is called on
-     * this form, so it is the fallback rather than the default.
-     */
-    check(
-        "the input's accessible name is the form's own label",
-        plain.find('input') && plain.find('input').getAttribute('aria-label') === 'Account name',
-        plain.find('input') && plain.find('input').getAttribute('aria-label'),
-    );
-
-    check(
-        'and falls back to the .resx when the form gives no label',
-        mount({ label: '' }).find('input').getAttribute('aria-label') === 'resx:HierarchyView_Name',
-    );
-
-    /*
-     * The information bug. A user denied read access gets `raw === null`, which
-     * is indistinguishable from an empty column unless `security.readable` is
-     * checked — so an unchecked control renders "no value" where the truth is
-     * "not allowed to see it".
-     */
-    const denied = mount({ security: 'no-access', value: null });
-
-    check(
-        'a column the user cannot read says so rather than rendering as empty',
-        denied.find('.HierarchyView-message')
-            && denied.find('.HierarchyView-message').textContent === 'resx:HierarchyView_NoAccess',
-        denied.find('.HierarchyView-message') && denied.find('.HierarchyView-message').textContent,
-    );
-
-    check(
-        'and hides the field surface rather than leaving an empty box above the message',
-        denied.find('.HierarchyView-field') && denied.find('.HierarchyView-field').hidden === true,
-    );
-
-    /*
-     * Two independent reasons to be read-only, and conflating them is a real
-     * bug: the form's `isControlDisabled` and the column's `security.editable`.
-     */
-    check(
-        'a read-only column disables the input on an editable form',
-        mount({ security: 'read-only' }).find('input').disabled === true,
-    );
-
-    // The same three shapes — see the virtual half above.
-    check(
-        'an unsecured column reported as an object, not undefined, renders the field enabled',
-        mount({ security: 'unsecured' }).find('.HierarchyView-field').hidden === false
-            && mount({ security: 'unsecured' }).find('input').disabled === false,
-    );
-
-    check(
-        'and the disabled state reaches the surface, not just the input',
-        mount({ security: 'read-only' }).container.classList.contains('HierarchyView--disabled'),
-    );
-
-    /*
-     * The platform's own validation. A failing business rule is silent inside a
-     * code component unless the control gives it somewhere to go.
-     */
-    const invalid = mount({ error: true });
-
-    check(
-        'a validation error is shown to the user',
-        invalid.find('.HierarchyView-message')
-            && invalid.find('.HierarchyView-message').textContent === host.DEFAULTS.errorMessage,
-        invalid.find('.HierarchyView-message') && invalid.find('.HierarchyView-message').textContent,
-    );
-
-    check(
-        'and is announced rather than only coloured',
-        invalid.find('input') && invalid.find('input').getAttribute('aria-invalid') === 'true',
-    );
-
-    /*
-     * The canvas/model-driven split, which is what every `?.` in the control is
-     * about. A canvas app publishes no column metadata and no theme.
-     */
-    const canvas = mount({ host: 'canvas' });
-
-    check('renders on a host that publishes no column metadata', Boolean(canvas.find('input')));
-
-    check(
-        'does not invent a maxLength the host never supplied',
-        canvas.find('input') && !canvas.find('input').maxLength,
-        canvas.find('input') && String(canvas.find('input').maxLength),
-    );
-
-    check(
-        'takes no position on the theme when the host publishes none',
-        !canvas.container.classList.contains('HierarchyView--dark'),
-        canvas.container.className,
-    );
-
-    check(
-        'and follows the host theme where there is one',
-        mount({ host: 'model-driven', dark: true }).container.classList.contains('HierarchyView--dark'),
-    );
-
-    /*
-     * The edit path, end to end: the user types, the control notifies, and what
-     * it hands back is what the platform will write to the column.
-     */
-    const edited = mount({});
-    const input = edited.find('input');
-
-    input.value = 'Fabrikam';
-    input.dispatchEvent({ type: 'input', target: input });
-
-    check('typing notifies the platform exactly once', edited.notifications() === 1, String(edited.notifications()));
-
-    check(
-        'and getOutputs hands back what was typed',
-        edited.outputs().value === 'Fabrikam',
-        JSON.stringify(edited.outputs()),
-    );
-
-    /*
-     * `updateView` runs on every change to any bound value, including ones this
-     * control caused itself — so a control that writes the input unconditionally
-     * moves the caret to the end of the field on every keystroke. The guard is
-     * invisible in a rendered form and visible here: a render that changes
-     * nothing must not touch the value the user is holding.
-     */
-    const typing = mount({});
-    const held = typing.find('input');
-
-    held.value = 'Half-typed';
-    typing.update({});
-
-    check(
-        'a re-render with an unchanged value leaves what the user is typing alone',
-        held.value === 'Half-typed',
-        held.value,
-    );
+    return mod.exports;
 }
 
-/* ------------------------------------------------------------ either shape */
+const Q = load('query/fetchXml');
+const R = load('query/records');
+const C = load('query/chain');
+const T = load('tree/reducer');
+const S = load('sample/parseSampleData');
+const D = load('data/HierarchyData');
+const P = load('platform');
 
-/*
- * **`null` is not `undefined`, and this is the assertion worth keeping when the
- * rest of the example goes.**
- *
- * The generated `IOutputs` types every bound value as optional, so
- * `this.value ?? undefined` type-checks cleanly and means the opposite of what
- * a clear needs: `undefined` is "no change". A canvas app honours that strictly
- * and the field simply refuses to empty, while a model-driven form is more
- * forgiving — so the bug hides on the host most people test first.
- * `pcf-star-rating` shipped exactly this and its clear button did nothing.
- */
-const cleared = mount({ value: null });
+const q = { entity: 'account', primaryId: 'accountid', primaryName: 'name', column: 'parentaccountid', details: ['address1_city', 'revenue'] };
+const G1 = '0f8fad5b-d9cb-469f-a165-70867728950e';
+
+/* ------------------------------------------------------------ the queries */
 
 check(
-    'a cleared column produces an output the platform can act on, not "no change"',
-    cleared.outputs().value !== undefined,
-    `getOutputs() returned ${JSON.stringify(cleared.outputs())}`,
+    'detailColumns: logical names only, lower-cased, deduplicated, three at most, the bound column excluded',
+    JSON.stringify(Q.parseDetailColumns(' Address1_City, revenue, Bogus Name!, parentaccountid, revenue, telephone1, fax ', ['parentaccountid']))
+        === JSON.stringify(['address1_city', 'revenue', 'telephone1']),
+    JSON.stringify(Q.parseDetailColumns(' Address1_City, revenue, Bogus Name!, parentaccountid, revenue, telephone1, fax ', ['parentaccountid'])),
 );
 
-/*
- * The resize contract, which is a pair and fails silently when half of it is
- * missing.
- *
- * `mode.allocatedWidth` is `-1` until the control calls
- * `mode.trackContainerResize(true)`, so a control that reflows on width without
- * asking lays out against -1 on every host and always picks its narrowest
- * branch. The scaffolded control reflows on neither, so all this can honestly
- * assert is that a narrow phone-sized container does not break it; the detail
- * line reports whether the control asked, which is the interesting half.
- *
- * **The moment your control reads `allocatedWidth` or `getFormFactor`, replace
- * this with the pair** — that it called `trackContainerResize(true)`, and that
- * it lays out differently at 320 than at 1200. `getFormFactor` is 0 unknown,
- * 1 desktop, 2 tablet, 3 phone: web is 1, and 3 is a phone, which is the
- * comparison people get backwards.
- */
-const sized = mount({ width: 320, formFactor: 'phone' });
+check('bareId strips braces and folds case, and refuses an empty or non-string id', Q.bareId('{0F8FAD5B-D9CB-469F-A165-70867728950E}') === G1 && Q.bareId('c1') === 'c1' && Q.bareId('') === null && Q.bareId(undefined) === null && Q.bareId(12) === null);
+
+check('escapeXml covers the five characters', Q.escapeXml(`<a&'b">`) === '&lt;a&amp;&apos;b&quot;&gt;');
+
+const ancestors = Q.ancestorsFetchXml(q, G1);
 
 check(
-    'renders in a phone-sized container',
-    sized.element !== undefined ? sized.element !== null : Boolean(sized.find('input')),
-    `trackContainerResize: ${sized.calls().some((call) => call.indexOf('trackContainerResize') === 0) ? 'called' : 'never called'}`,
+    'the ancestor query asks eq-or-above on the primary key, with every card column and a CountChildren aggregate',
+    ancestors === "<fetch><entity name='account'>"
+        + "<attribute name='accountid'/><attribute name='name'/><attribute name='parentaccountid'/><attribute name='address1_city'/><attribute name='revenue'/>"
+        + "<attribute name='accountid' rowaggregate='CountChildren' alias='children'/>"
+        + `<filter><condition attribute='accountid' operator='eq-or-above' value='${G1}'/></filter>`
+        + '</entity></fetch>',
+    ancestors,
 );
 
-/*
- * Hidden is a state, not an absence. Canvas relies on `mode.isVisible` — a
- * model-driven form hides the section itself — and a control that ignores it
- * stays on screen in a canvas app that asked for it to go.
- */
 check(
-    'renders nothing visible when the host says it is hidden',
-    (() => {
-        const hidden = mount({ visible: false });
-
-        return hidden.element !== undefined
-            ? hidden.props().visible === false
-            : hidden.container.classList.contains('HierarchyView--hidden');
-    })(),
+    'the children query filters on the lookup column and orders by name',
+    Q.childrenFetchXml(q, G1).includes(`<filter><condition attribute='parentaccountid' operator='eq' value='${G1}'/></filter><order attribute='name'/>`),
 );
+
+check(
+    'the fallback children query is OData on the lookup\'s _value, ordered by name',
+    Q.childrenOData(q, G1) === `?$select=accountid,name,parentaccountid,address1_city,revenue&$filter=_parentaccountid_value eq ${G1}&$orderby=name asc`,
+    Q.childrenOData(q, G1),
+);
+
+check(
+    'the query string spelling is decided in one place, and it is the documented one until P1 says otherwise',
+    Q.FETCHXML_ENCODED === false && Q.queryString('<fetch/>') === '?fetchXml=<fetch/>',
+);
+
+/* -------------------------------------------------------------- the rows */
+
+const row = {
+    accountid: '{C1C1C1C1-0000-0000-0000-000000000001}',
+    name: 'Contoso West',
+    _parentaccountid_value: 'p1p1p1p1-0000-0000-0000-000000000001',
+    '_parentaccountid_value@OData.Community.Display.V1.FormattedValue': 'Contoso',
+    address1_city: 'Seattle',
+    revenue: 1200000,
+    'revenue@OData.Community.Display.V1.FormattedValue': '$1,200,000.00',
+    children: '2',
+};
+const node = R.toNode(row, q);
+
+check(
+    'a row becomes a node: bare id, formatted values over raw ones, a string count read as a number',
+    node.id === 'c1c1c1c1-0000-0000-0000-000000000001'
+        && node.parentId === 'p1p1p1p1-0000-0000-0000-000000000001'
+        && node.details[0].text === 'Seattle'
+        && node.details[1].text === '$1,200,000.00'
+        && node.childCount === 2,
+    JSON.stringify(node),
+);
+
+check('a null detail is an empty string, and a row without the aggregate has no count',
+    R.toNode({ accountid: G1, name: 'x', address1_city: null }, q).details[0].text === ''
+    && R.toNode({ accountid: G1, name: 'x' }, q).childCount === null);
+
+check('a row without a usable id is dropped', R.toNodes([{ name: 'no id' }, { accountid: G1, name: 'ok' }], q).length === 1);
+
+/* ------------------------------------------------------------- the chain */
+
+const mk = (id, parentId, count) => ({ id, name: id.toUpperCase(), parentId, details: [], childCount: count === undefined ? null : count });
+
+check(
+    'the chain is ordered top-most first whatever order the server sent, and strangers are left out',
+    C.orderChain([mk('c1', 'p1'), mk('x9', 'r1'), mk('r1', null), mk('p1', 'r1')], 'c1').map((n) => n.id).join(',') === 'r1,p1,c1',
+);
+check('a parent the user cannot read starts the chain there', C.orderChain([mk('c1', 'p1'), mk('p1', 'ghost')], 'c1').map((n) => n.id).join(',') === 'p1,c1');
+check('a cycle in the data ends the chain rather than the tab', C.orderChain([mk('a', 'b'), mk('b', 'a')], 'a').map((n) => n.id).join(',') === 'b,a');
+check('a record missing from its own answer is an empty chain', C.orderChain([mk('p1', null)], 'c1').length === 0);
+
+/* ----------------------------------------------------------- the reducer */
+
+let tree = T.initialState('c1');
+tree = T.reduce(tree, { type: 'chainLoaded', chain: [mk('r1', null, 2), mk('p1', 'r1', 2), mk('c1', 'p1', 2)], initialDepth: 1 });
+
+let rows = T.visibleRows(tree);
+check(
+    'after the chain: three rows, the ancestors partial and open, the current record open and marked',
+    rows.map((r) => `${r.node.id}:${r.depth}:${r.isAncestor ? 'A' : ''}${r.isCurrent ? 'C' : ''}${r.partial ? 'p' : ''}${r.expanded ? 'e' : ''}`).join(' ')
+        === 'r1:0:Ape p1:1:Ape c1:2:Ce',
+    rows.map((r) => `${r.node.id}:${r.depth}:${r.isAncestor ? 'A' : ''}${r.isCurrent ? 'C' : ''}${r.partial ? 'p' : ''}${r.expanded ? 'e' : ''}`).join(' '),
+);
+check('only the current record is pending — an ancestor shows its path child without a query', JSON.stringify(T.pendingLoads(tree)) === '["c1"]');
+check('relative depth: current 0, parent -1, root -2', T.relativeDepth(tree, 'c1') === 0 && T.relativeDepth(tree, 'p1') === -1 && T.relativeDepth(tree, 'r1') === -2);
+
+tree = T.reduce(tree, { type: 'loading', id: 'c1' });
+check('a loading node is no longer pending', T.pendingLoads(tree).length === 0 && T.visibleRows(tree)[2].loading === true);
+
+tree = T.reduce(tree, { type: 'childrenLoaded', id: 'c1', children: [mk('k1', 'c1', 1), mk('k2', 'c1', 0)], truncated: false, expandChildren: false });
+rows = T.visibleRows(tree);
+check(
+    'children land under the current record, collapsed, one with a chevron and one without',
+    rows.map((r) => `${r.node.id}:${r.hasChildren}`).join(' ') === 'r1:yes p1:yes c1:yes k1:yes k2:no'
+        && T.relativeDepth(tree, 'k1') === 1,
+    rows.map((r) => `${r.node.id}:${r.hasChildren}`).join(' '),
+);
+
+tree = T.reduce(tree, { type: 'toggle', id: 'k1' });
+check('opening a node makes it pending; a node the server counted at zero never is', JSON.stringify(T.pendingLoads(tree)) === '["k1"]');
+
+tree = T.reduce(tree, { type: 'loading', id: 'k1' });
+tree = T.reduce(tree, { type: 'loadFailed', id: 'k1', message: 'Refused by the rig.' });
+check('a failed load stays open, shows the message, and is not retried on its own', T.visibleRows(tree)[3].failed === 'Refused by the rig.' && T.pendingLoads(tree).length === 0);
+tree = T.reduce(tree, { type: 'retry', id: 'k1' });
+check('retry forgets the failure and the node is pending again', JSON.stringify(T.pendingLoads(tree)) === '["k1"]' && T.visibleRows(tree)[3].failed === null);
+
+tree = T.reduce(tree, { type: 'showAll', id: 'p1' });
+check('show all on an ancestor forgets its path child and makes it pending', T.pendingLoads(tree).includes('p1') && T.visibleRows(tree)[1].partial === false);
+tree = T.reduce(tree, { type: 'childrenLoaded', id: 'p1', children: [mk('c1', 'p1', 2), mk('s1', 'p1', 0)], truncated: false, expandChildren: false });
+rows = T.visibleRows(tree);
+check(
+    'the sibling appears beside the current record, which keeps its children and its mark',
+    rows.map((r) => r.node.id).join(',') === 'r1,p1,c1,k1,k2,s1' && rows[2].isCurrent && rows[1].isAncestor,
+    rows.map((r) => r.node.id).join(','),
+);
+
+const truncated = T.reduce(T.reduce(T.initialState('c1'), { type: 'chainLoaded', chain: [mk('c1', null, 9)], initialDepth: 1 }),
+    { type: 'childrenLoaded', id: 'c1', children: [mk('k1', 'c1'), mk('k2', 'c1')], truncated: true, expandChildren: false });
+check('a truncated node keeps the server\'s count and says how many are shown', T.visibleRows(truncated)[0].truncated && T.visibleRows(truncated)[0].loadedCount === 2 && truncated.nodes.c1.childCount === 9);
+
+const deep = T.reduce(T.reduce(T.initialState('c1'), { type: 'chainLoaded', chain: [mk('c1', null)], initialDepth: 2 }),
+    { type: 'childrenLoaded', id: 'c1', children: [mk('k1', 'c1')], truncated: false, expandChildren: true });
+check('initialDepth 2 opens the children as they land', T.pendingLoads(deep).includes('k1'));
+check('initialDepth 0 shows the current record closed', T.pendingLoads(T.reduce(T.initialState('c1'), { type: 'chainLoaded', chain: [mk('c1', null)], initialDepth: 0 })).length === 0);
+check('an empty chain is not-found', T.reduce(T.initialState('c1'), { type: 'chainLoaded', chain: [], initialDepth: 1 }).error === 'not-found');
+
+/* ------------------------------------------------------------ sample data */
+
+const sampleJson = JSON.stringify({
+    current: 'c1',
+    records: [
+        { id: 'r1', name: 'Contoso', parentId: null },
+        { id: 'c1', name: 'Contoso West', parentId: 'r1', details: { City: 'Seattle', Owner: 'Ana' }, childCount: 2 },
+        { id: 'k1', name: 'Kid', parentId: 'c1' },
+        { id: 'k2', name: 'Kid 2', parentId: 'c1', childCount: -3 },
+        { id: 'orphan', name: 'Orphan', parentId: 'nobody' },
+        { name: 'no id' },
+        { id: 'c1', name: 'duplicate' },
+    ],
+});
+const sample = S.parseSampleData(sampleJson);
+
+check(
+    'sample data: records kept once each, an unknown parent makes a root, a bad count is null, details capped',
+    sample.ok && sample.tree.currentId === 'c1' && sample.tree.nodes.length === 5
+        && sample.tree.nodes.find((n) => n.id === 'orphan').parentId === null
+        && sample.tree.nodes.find((n) => n.id === 'k2').childCount === null
+        && sample.tree.nodes.find((n) => n.id === 'c1').details.length === 2,
+    JSON.stringify(sample),
+);
+check('bad JSON, no records, or a blank string is not sample data', !S.parseSampleData('nope').ok && !S.parseSampleData('{}').ok && !S.parseSampleData('  ').ok);
+check('a current that names no record falls back to the first', S.parseSampleData('{"current":"zz","records":[{"id":"a","name":"A"}]}').tree.currentId === 'a');
+
+/* --------------------------------------------- the three sources, live */
+
+async function sources() {
+    const sampleSource = D.createSampleSource(sample.tree);
+    const chain = await sampleSource.loadChain();
+    check('the sample source answers the chain and children from the parsed tree', chain.map((n) => n.id).join(',') === 'r1,c1' && (await sampleSource.loadChildren('c1')).children.length === 2);
+
+    const calls = [];
+    const ctx = host.createContext({ fixture, calls, clientUrl: host.nextClientUrl() });
+    const live = { webAPI: ctx.webAPI, q: { ...q, details: ['address1_city', 'revenue'] }, recordId: 'c1', parentId: 'p1', maxChildren: 50 };
+
+    const fx = D.createFetchXmlSource(live);
+    const fxChain = await fx.loadChain();
+    check(
+        'the FetchXML source reads the whole chain in one eq-or-above call, in order, with counts',
+        fxChain.map((n) => `${n.id}:${n.childCount}`).join(',') === 'r1:2,p1:2,c1:2'
+            && calls.filter((c) => c.startsWith('webAPI.retrieveMultipleRecords')).length === 1
+            && calls[0].includes("operator='eq-or-above'"),
+        JSON.stringify({ chain: fxChain.map((n) => n.id), calls }),
+    );
+    check('and formatted values reach the card', fxChain[0].details[1].text === '$1,200,000,000.00', JSON.stringify(fxChain[0].details));
+
+    const kids = await fx.loadChildren('c1');
+    check(
+        'its children come by name with their own counts, and maxChildren is the page size',
+        kids.children.map((n) => `${n.id}:${n.childCount}`).join(',') === 'k1:1,k2:0' && kids.truncated === false
+            && calls[calls.length - 1].includes(' max=50'),
+        JSON.stringify(kids.children.map((n) => n.id)) + ' ' + calls[calls.length - 1].slice(-60),
+    );
+    const cut = await D.createFetchXmlSource({ ...live, maxChildren: 1 }).loadChildren('c1');
+    check('a node with more children than the page says so', cut.children.length === 1 && cut.truncated === true);
+
+    calls.length = 0;
+    const od = D.createODataSource(live);
+    const odChain = await od.loadChain();
+    check(
+        'the OData source walks up one retrieveRecord per level, current first, and orders the same chain',
+        odChain.map((n) => n.id).join(',') === 'r1,p1,c1'
+            && calls.filter((c) => c.startsWith('webAPI.retrieveRecord')).map((c) => c.split(' ')[1]).join(',') === 'c1,p1,r1',
+        JSON.stringify(calls),
+    );
+    const odKids = await od.loadChildren('c1');
+    check(
+        'its children come through an OData $filter on the lookup, without counts',
+        odKids.children.map((n) => `${n.id}:${n.childCount}`).join(',') === 'k1:null,k2:null'
+            && calls[calls.length - 1].includes('$filter=_parentaccountid_value eq c1'),
+        calls[calls.length - 1],
+    );
+
+    const orphaned = JSON.parse(JSON.stringify(fixture));
+    orphaned.tables.account = orphaned.tables.account.filter((r) => r.accountid !== 'r1');
+    const partialChain = await D.createODataSource({ ...live, webAPI: host.createContext({ fixture: orphaned, clientUrl: host.nextClientUrl() }).webAPI }).loadChain();
+    check('a parent the user cannot read ends the walk, not the tree', partialChain.map((n) => n.id).join(',') === 'p1,c1', partialChain.map((n) => n.id).join(','));
+
+    let fault = null;
+    await D.createFetchXmlSource({ ...live, webAPI: host.createContext({ fixture, clientUrl: host.nextClientUrl(), webApiFails: true }).webAPI }).loadChain().catch((e) => { fault = e; });
+    check('a refusing Web API surfaces the platform\'s sentence, not [object Object]', D.faultMessage(fault) === 'The request could not be completed.', D.faultMessage(fault));
+    check('faultMessage survives null, a string and an Error', D.faultMessage(null) === '' && D.faultMessage('x') === 'x' && D.faultMessage(new Error('e')) === 'e');
+
+    /* ------------------------------------------------ the hierarchy check */
+
+    const a = host.createContext({ fixture, clientUrl: host.nextClientUrl() });
+    check('isHierarchical: the fixture\'s parentaccountid is', await P.isHierarchical(a.page.getClientUrl(), 'account', 'parentaccountid') === true);
+    check('… and masterid is not', await P.isHierarchical(a.page.getClientUrl(), 'account', 'masterid') === false);
+    const b = host.createContext({ fixture, clientUrl: host.nextClientUrl(), hierarchical: false });
+    check('… nor parentaccountid on a table nobody flagged', await P.isHierarchical(b.page.getClientUrl(), 'account', 'parentaccountid') === false);
+    const c = host.createContext({ fixture, clientUrl: host.nextClientUrl(), relationshipsStatus: 403 });
+    check('a refused metadata read answers false, never throws', await P.isHierarchical(c.page.getClientUrl(), 'account', 'parentaccountid') === false);
+    const d = host.createContext({ fixture, clientUrl: host.nextClientUrl(), relationshipsStatus: 0 });
+    check('an offline metadata read answers false, never throws', await P.isHierarchical(d.page.getClientUrl(), 'account', 'parentaccountid') === false);
+    check('the answer is cached per organisation and table', P.isHierarchical(a.page.getClientUrl(), 'account', 'parentaccountid') === P.isHierarchical(a.page.getClientUrl(), 'account', 'parentaccountid'));
+}
+
+/* ------------------------------------------------------------- the bundle */
+
+const LOOKUP = { valueType: 'Lookup.Simple', column: 'parentaccountid', value: fixture.parentLookup, contextInfo: { entityId: '{C1C1C1C1-0000-0000-0000-000000000001}', entityTypeName: 'account' } };
+
+const bound = mount(LOOKUP);
+check('a saved record with a parent lookup and a Web API is live', bound.props().mode === 'live', bound.props().mode);
+check('the record id is bare and lower-case whatever the host spelt', bound.props().currentId === 'c1c1c1c1-0000-0000-0000-000000000001', bound.props().currentId);
+check('getOutputs is empty and the control never notifies', JSON.stringify(bound.outputs()) === '{}' && bound.notifications() === 0);
+check('it asks for width changes once, in init', bound.calls().filter((c) => c === 'trackContainerResize(true)').length === 1, JSON.stringify(bound.calls()));
+check('the strings come from the .resx', bound.props().strings.notAvailable === 'resx:HierarchyView_NotAvailable' && bound.props().strings.expand === 'resx:HierarchyView_Expand');
+check('the card can open a record because the host has openForm', typeof bound.props().openRecord === 'function');
+check('the theme is the host\'s when it publishes one, and dark is passed through as a boolean', bound.props().dark === false);
+
+const keyBefore = bound.props().sourceKey;
+const redrawn = bound.update({});
+check('a re-render with nothing changed keeps the same key and the same resolve', redrawn.props.sourceKey === keyBefore && redrawn.props.resolve === bound.props().resolve);
+const deeper = bound.update({ inputs: { initialDepth: 3, detailColumns: 'address1_city' } });
+check('an input changed after init changes the key — the hub\'s preset switch reaches the tree', deeper.props.sourceKey !== keyBefore && deeper.props.initialDepth === 3);
+check('initialDepth and maxChildren are clamped', bound.update({ inputs: { initialDepth: 99, maxChildren: 0 } }).props.initialDepth === 5 && bound.update({ inputs: { maxChildren: 9999 } }).props.sourceKey.includes('|250|'));
+
+check('no Web API is not-available', mount({ ...LOOKUP, webAPI: false }).props().mode === 'not-available');
+check('an unsaved record is save-first', mount({ ...LOOKUP, contextInfo: null }).props().mode === 'save-first');
+check('a text column is not-a-lookup', mount({ contextInfo: LOOKUP.contextInfo }).props().mode === 'not-a-lookup');
+check('a lookup whose host has no methods still finds its target in the value', mount({ ...LOOKUP, targetMethod: 'absent' }).props().mode === 'live');
+check('a lookup whose method throws falls back the same way', mount({ ...LOOKUP, targetMethod: 'throws' }).props().mode === 'live');
+check('an empty lookup on a host with no methods has no target, and says so', mount({ ...LOOKUP, targetMethod: 'absent', value: [] }).props().mode === 'not-a-lookup');
+check('a column the user cannot read is no-access, before anything else', mount({ ...LOOKUP, security: 'no-access' }).props().mode === 'no-access');
+check('a host with no openForm gets cards that do not open', mount({ ...LOOKUP, openForm: 'absent' }).props().openRecord === null);
+check('hidden is honoured', mount({ ...LOOKUP, visible: false }).props().visible === false);
+
+const sampled = mount({ webAPI: false, inputs: { sampleData: sampleJson } });
+check('sample data wins over everything the host lacks, and names its own current record', sampled.props().mode === 'sample' && sampled.props().currentId === 'c1');
+check('unreadable sample data is its own state', mount({ inputs: { sampleData: '{not json' } }).props().mode === 'bad-sample');
+
+/* -------------------------------------------- the routes, through the bundle */
+
+async function routes() {
+    check('the live resolve picks FetchXML on a hierarchical lookup', (await bound.props().resolve()).route === 'fetchxml');
+    check('and the same resolve twice is one promise', bound.props().resolve() === bound.props().resolve());
+    check('… OData when the relationship is not hierarchical', (await mount({ ...LOOKUP, hierarchical: false }).props().resolve()).route === 'odata');
+    check('… OData when the metadata read is refused', (await mount({ ...LOOKUP, relationshipsStatus: 403 }).props().resolve()).route === 'odata');
+    check('… OData when there is no client URL to read metadata from', (await mount({ ...LOOKUP, page: false }).props().resolve()).route === 'odata');
+    check('… and the sample source for sample data', (await sampled.props().resolve()).route === 'sample');
+
+    const detailed = mount({ ...LOOKUP, inputs: { detailColumns: 'address1_city, name, revenue' } });
+    const source = await detailed.props().resolve();
+    await source.loadChildren('c1');
+    const query = detailed.calls().filter((c) => c.startsWith('webAPI.retrieveMultipleRecords')).pop();
+    check(
+        'detail columns reach the query once each, and the primary columns are not asked for twice',
+        query.includes("<attribute name='address1_city'/>") && query.includes("<attribute name='revenue'/>")
+            && query.split("<attribute name='name'/>").length === 2,
+        query,
+    );
+    check('utils.getEntityMetadata was asked for the primary columns', detailed.calls().some((c) => c === 'getEntityMetadata("account")'));
+
+    const noUtils = mount({ ...LOOKUP, utils: false });
+    const guessed = await noUtils.props().resolve();
+    await guessed.loadChain();
+    check('without the Utility feature the primary columns are guessed, and the control still works', guessed.route === 'fetchxml' && noUtils.calls().some((c) => c.includes("attribute='accountid' operator='eq-or-above'")));
+}
+
+/* -------------------------------------------------------------- the markup */
+
+const componentModule = load('components/HierarchyViewControl');
+const server = require(path.join(root, 'node_modules', 'react-dom', 'server'));
+
+const messageMarkup = renderDeep(mount({ ...LOOKUP, webAPI: false }).element) || '';
+check('the not-available state renders its .resx sentence and no tree', messageMarkup.includes('resx:HierarchyView_NotAvailable') && !messageMarkup.includes('role="tree"'));
+const liveMarkup = renderDeep(bound.element) || '';
+check('the first live render is the loading state', liveMarkup.includes('data-fluent="Spinner"') && liveMarkup.includes('resx:HierarchyView_Loading'));
+check('the root carries the narrow class when the host allocates a narrow width', (renderDeep(mount({ ...LOOKUP, width: 320 }).element) || '').includes('HierarchyView--narrow'));
+check('and the dark class when the host says dark', (renderDeep(mount({ ...LOOKUP, dark: true }).element) || '').includes('HierarchyView--dark'));
+
+const strings = bound.props().strings;
+const treeMarkup = (() => {
+    const warn = console.error;
+    console.error = () => {};
+    try {
+        return server.renderToStaticMarkup(React.createElement('ul', null, rows.map((r) =>
+            React.createElement(componentModule.TreeRow, { key: r.node.id, row: r, strings, openRecord: () => Promise.resolve(), onToggle: () => {}, onRetry: () => {}, onShowAll: () => {} }))));
+    } finally {
+        console.error = warn;
+    }
+})();
+
+check('each row is a treeitem at its level', treeMarkup.includes('aria-level="1"') && treeMarkup.includes('aria-level="4"'));
+check('the current record is marked and is not a link', treeMarkup.includes('aria-current="true"') && treeMarkup.includes('resx:HierarchyView_Current') && (treeMarkup.match(/HierarchyView-open/g) || []).length === 5);
+check('a node with children gets a chevron labelled from the .resx with its name', treeMarkup.includes('aria-label="resx:HierarchyView_Collapse"') || treeMarkup.includes('Collapse'), treeMarkup.slice(0, 200));
+check('the ancestor at the top still shows its path child and the show-all affordance', treeMarkup.includes('resx:HierarchyView_ShowAll'));
+check('a count badge shows the server\'s number', treeMarkup.includes('>2</span>'));
 
 /* ---------------------------------------------------- what destroy owes */
 
@@ -671,7 +789,67 @@ check(
 
 disposeAll();
 
-report();
+/* ======================================================================== *
+ *  THE RIG'S OWN CLAIMS — keep these. They are about `dev/host.js`, not about
+ *  the control, and they exist because a rig that silently answers the wrong
+ *  host's question certifies whatever it is handed. Each one was a real bug in
+ *  a sibling repository's rig before it was an assertion here.
+ * ======================================================================== */
+
+async function rigSelfCheck() {
+    const relationships = (url) => `${url}/api/data/v9.2/EntityDefinitions(LogicalName='account')/OneToManyRelationships`;
+
+    /*
+     * Two hosts, two answers. The fetch stub is one global routed by origin,
+     * and before it was, the stub belonged to whichever host a suite created
+     * last — so a second mount's refusal became every mount's refusal.
+     */
+    const open = mount({});
+    const refused = mount({ relationshipsStatus: 403 });
+    const [a, b] = await Promise.all([fetch(relationships(open.clientUrl)), fetch(relationships(refused.clientUrl))]);
+
+    check('rig: each host answers its own metadata fetch', a.status === 200 && b.status === 403, `${a.status} / ${b.status}`);
+    check(
+        "rig: a fresh host does not inherit an earlier host's answers",
+        (await a.json()).value.some((row) => row.ReferencingAttribute === 'parentaccountid' && row.IsHierarchical === true),
+    );
+
+    let foreign = 'resolved';
+    await fetch('https://nowhere.invalid/api/data/v9.2/x').catch((error) => { foreign = error.constructor.name; });
+    // Whatever `fetch` was there before answers — Node's own, here, which cannot
+    // resolve the name — and the claim is only that the rig did not answer it.
+    check("rig: a URL on no host's origin is refused, not answered", foreign !== 'resolved', foreign);
+
+    const ctx = host.createContext({ fixture, clientUrl: host.nextClientUrl() });
+    const xml = "<fetch><entity name='account'><attribute name='accountid'/><attribute name='name'/><attribute name='accountid' rowaggregate='CountChildren' alias='children'/><filter><condition attribute='accountid' operator='eq-or-above' value='c1'/></filter></entity></fetch>";
+    const chain = await ctx.webAPI.retrieveMultipleRecords('account', `?fetchXml=${encodeURIComponent(xml)}`);
+
+    check(
+        'rig: eq-or-above answers the record and every ancestor, with child counts',
+        chain.entities.map((row) => `${row.accountid}:${row.children}`).sort().join(',') === 'c1:2,p1:2,r1:2',
+        JSON.stringify(chain.entities.map((row) => [row.accountid, row.children])),
+    );
+
+    let fault = null;
+    await host.createContext({ fixture, clientUrl: host.nextClientUrl(), hierarchical: false })
+        .webAPI.retrieveMultipleRecords('account', `?fetchXml=${encodeURIComponent(xml)}`)
+        .catch((error) => { fault = error; });
+    check(
+        'rig: a hierarchical operator on a table that is not hierarchical is refused as a plain object',
+        fault !== null && !(fault instanceof Error) && typeof fault.errorCode === 'number' && typeof fault.message === 'string',
+        fault && fault.constructor.name,
+    );
+
+    const page = await ctx.webAPI.retrieveMultipleRecords('account', "?$select=accountid,name&$filter=_parentaccountid_value eq c1&$orderby=name asc", 1);
+    check('rig: maxPageSize truncates and says there is more', page.entities.length === 1 && typeof page.nextLink === 'string', JSON.stringify(page));
+
+    disposeAll();
+}
+
+sources().then(routes).then(rigSelfCheck).then(report, (error) => {
+    check('the asynchronous half ran to the end', false, String(error && error.stack || error));
+    report();
+});
 
 function report() {
     const failed = results.filter((result) => !result.ok);

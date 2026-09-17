@@ -35,6 +35,11 @@
 
     /** Every `trackContainerResize` / `setFullScreen` call the control made. */
     var calls = [];
+    /*
+     * One organisation URL for the life of the page — the platform's does not
+     * change between passes, and the rig's `fetch` stub answers on it.
+     */
+    var clientUrl = host.nextClientUrl();
 
     /*
      * What the "Location" switch means, spelled out here rather than in the
@@ -65,12 +70,24 @@
     };
 
     function options() {
+        /*
+         * This control binds a Lookup.Simple, so the column value box is read
+         * as the *parent*: any text means "has a parent" and hands over the
+         * fixture's parent lookup, empty means the record is a root. The
+         * record identity switch names the fixture's current record.
+         */
+        var hasParent = columnValue !== null && columnValue !== '';
+
         return {
+            valueType: 'Lookup.Simple',
+            column: 'parentaccountid',
+            target: 'account',
+            primaryNameAttribute: 'name',
             host: document.getElementById('harness-host').value,
             formFactor: document.getElementById('harness-formfactor').value,
             width: Number(document.getElementById('harness-width').value),
             calls: calls,
-            value: columnValue,
+            value: hasParent ? window.__pcfFixture.parentLookup : [],
             security: document.getElementById('harness-security').value,
             error: document.getElementById('harness-error').checked,
             disabled: document.getElementById('harness-disabled').checked,
@@ -83,7 +100,7 @@
             captureImage: document.getElementById('harness-camera').value === 'photo' ? PHOTO : null,
             contextInfo:
                 document.getElementById('harness-identity').value === 'contextinfo'
-                    ? { entityId: '0f8fad5b-d9cb-469f-a165-70867728950e', entityTypeName: 'account' }
+                    ? { entityId: window.__pcfFixture.current, entityTypeName: 'account' }
                     : null,
             webAPI: document.getElementById('harness-webapi').checked,
             utils: document.getElementById('harness-utils').checked,
@@ -91,6 +108,22 @@
             hasNavigation: document.getElementById('harness-navigation').checked,
             dialogs: document.getElementById('harness-dialogs').value,
             offline: document.getElementById('harness-offline').checked,
+            openForm: document.getElementById('harness-openform').value,
+            webApiFails: document.getElementById('harness-webapifails').checked,
+            page: document.getElementById('harness-page').checked,
+            relationshipsStatus: Number(document.getElementById('harness-relationships').value),
+            hierarchical:
+                document.getElementById('harness-hierarchical').value === 'fixture'
+                    ? undefined
+                    : document.getElementById('harness-hierarchical').value === 'true',
+            fixture: window.__pcfFixture,
+            clientUrl: clientUrl,
+            inputs: {
+                detailColumns: document.getElementById('harness-details').value,
+                initialDepth: Number(document.getElementById('harness-depth').value),
+                maxChildren: Number(document.getElementById('harness-maxchildren').value),
+                sampleData: document.getElementById('harness-sample').value,
+            },
         };
     }
 
@@ -233,6 +266,21 @@
          * it always did — typing is a different event from committing.
          */
         document.querySelector('.harness-controls').addEventListener('change', render);
+
+        /*
+         * Whether the lookup is hierarchical, whether the metadata read is
+         * refused and whether the Web API refuses are facts about the
+         * *organisation*, and the control caches its route per organisation URL
+         * — correctly, because none of them changes under a form. So flipping
+         * one of those switches is a different organisation: take a fresh URL,
+         * which also changes the key the tree is built from, and it reloads.
+         */
+        ['harness-hierarchical', 'harness-relationships', 'harness-webapifails'].forEach(function (id) {
+            document.getElementById(id).addEventListener('change', function () {
+                clientUrl = host.nextClientUrl();
+                render();
+            });
+        });
 
         // Typed into the field's *column*, not into the control — this is the
         // platform handing down a new bound value, which is a different event

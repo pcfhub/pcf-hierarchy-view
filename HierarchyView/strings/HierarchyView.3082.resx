@@ -158,4 +158,10 @@
   <data name="HierarchyView_Retry" xml:space="preserve">
     <value>Reintentar</value>
   </data>
+  <data name="HierarchyView_ShowAll" xml:space="preserve">
+    <value>Mostrar todos los hijos</value>
+  </data>
+  <data name="HierarchyView_NotFound" xml:space="preserve">
+    <value>Este registro no se encontró en su tabla.</value>
+  </data>
 </root>

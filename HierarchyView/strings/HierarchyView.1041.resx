@@ -158,4 +158,10 @@
   <data name="HierarchyView_Retry" xml:space="preserve">
     <value>再試行</value>
   </data>
+  <data name="HierarchyView_ShowAll" xml:space="preserve">
+    <value>すべての子を表示</value>
+  </data>
+  <data name="HierarchyView_NotFound" xml:space="preserve">
+    <value>このレコードはテーブル内に見つかりませんでした。</value>
+  </data>
 </root>

@@ -173,7 +173,29 @@
             <label>
                 Column value
                 <input type="text" id="harness-value" />
-                <span>Empty here is <code>''</code>; use Clear for <code>null</code>.</span>
+                <span>Any text is "has a parent" (the fixture's); empty is a root.</span>
+            </label>
+
+            <label>
+                Detail columns
+                <input type="text" id="harness-details" value="address1_city, revenue" />
+                <span>Logical names under each name; three at most.</span>
+            </label>
+
+            <label>
+                Levels open at start
+                <input type="number" id="harness-depth" value="1" min="0" max="5" />
+            </label>
+
+            <label>
+                Children per node
+                <input type="number" id="harness-maxchildren" value="50" min="1" max="250" />
+            </label>
+
+            <label>
+                Sample data (JSON)
+                <input type="text" id="harness-sample" value="" />
+                <span>Non-empty and the control renders this instead of querying.</span>
             </label>
 
             <label>
@@ -281,6 +303,45 @@
             </label>
 
             <label>
+                navigation.openForm
+                <select id="harness-openform">
+                    <option value="resolves">Resolves (a form the user navigated to)</option>
+                    <option value="rejects">Refused (rejects)</option>
+                    <option value="absent">Absent (canvas)</option>
+                </select>
+            </label>
+
+            <label class="is-switch">
+                <input type="checkbox" id="harness-webapifails" />
+                Every Web API call is refused
+            </label>
+
+            <label class="is-switch">
+                <input type="checkbox" id="harness-page" checked />
+                context.page.getClientUrl exists
+            </label>
+
+            <label>
+                Relationship metadata fetch
+                <select id="harness-relationships">
+                    <option value="200">200 — lists the fixture's relationships</option>
+                    <option value="403">403 — refused</option>
+                    <option value="404">404 — not found</option>
+                    <option value="0">Network failure (rejects with a TypeError)</option>
+                </select>
+                <span>What <code>EntityDefinitions(…)/OneToManyRelationships</code> answers.</span>
+            </label>
+
+            <label>
+                The parent lookup is hierarchical
+                <select id="harness-hierarchical">
+                    <option value="fixture">As the fixture says (parentaccountid: yes)</option>
+                    <option value="true">Yes</option>
+                    <option value="false">No — hierarchical operators are refused</option>
+                </select>
+            </label>
+
+            <label>
                 Platform dialogs
                 <select id="harness-dialogs">
                     <option value="confirmed">Confirmed</option>
@@ -332,6 +393,7 @@
             bundle calls the moment it loads, and there is nowhere to register
             otherwise.
         -->
+        <script src="fixture.js"></script>
         <!--
             React and the Fluent stand-in ahead of host.js, because harness.js
             reads both into locals the moment it loads.
