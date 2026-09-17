@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+
+  "slug": "pcf-hierarchy-view",
+  "name": "Hierarchy View",
+  "tagline": "A record's place in its hierarchy — ancestors above, children below — from its parent lookup.",
+  "category": "visualisation",
+  "tags": [],
+
+  "control": {
+    "namespace": "PCFHub",
+    "constructor": "HierarchyView",
+    "type": "virtual",
+    "framework": "react_virtual",
+    "manifestPath": "HierarchyView/ControlManifest.Input.xml"
+  },
+
+  "links": {
+    "homepage": "https://github.com/pcfhub/pcf-hierarchy-view",
+    "support": "https://github.com/pcfhub/pcf-hierarchy-view/issues",
+    "license": "MIT"
+  },
+
+  "docs": {
+    "path": "docs"
+  },
+
+  "media": {
+    "logo": "media/logo.png",
+    "screenshots": []
+  },
+
+  "demo": {
+    "fidelity": "none",
+    "presets": []
+  }
+}
