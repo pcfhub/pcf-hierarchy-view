@@ -72,24 +72,90 @@
   </resheader>
 
   <data name="HierarchyView_Name" xml:space="preserve">
-    <value>Hierarchy View</value>
+    <value>Vue hiérarchique</value>
   </data>
   <data name="HierarchyView_Desc" xml:space="preserve">
-    <value>A record's place in its hierarchy — ancestors above, children below — from its parent lookup.</value>
+    <value>La place d'un enregistrement dans sa hiérarchie — parents au-dessus, enfants en dessous — à partir de sa recherche parent.</value>
   </data>
+
   <data name="value_Name" xml:space="preserve">
-    <value>Valeur</value>
+    <value>Recherche parent</value>
   </data>
   <data name="value_Desc" xml:space="preserve">
-    <value>La colonne que ce contrôle lit et écrit.</value>
+    <value>La recherche vers l'enregistrement parent de cette même table — « Compte parent », par exemple. Le contrôle y lit la hiérarchie et n'y écrit jamais.</value>
   </data>
-  <data name="placeholder_Name" xml:space="preserve">
-    <value>Espace réservé</value>
+
+  <data name="detailColumns_Name" xml:space="preserve">
+    <value>Colonnes de détail</value>
   </data>
-  <data name="placeholder_Desc" xml:space="preserve">
-    <value>Texte indicatif affiché lorsque le champ est vide.</value>
+  <data name="detailColumns_Desc" xml:space="preserve">
+    <value>Noms logiques, séparés par des virgules, affichés sous le nom de chaque enregistrement — « address1_city, revenue », par exemple. Trois au plus.</value>
   </data>
+
+  <data name="initialDepth_Name" xml:space="preserve">
+    <value>Niveaux ouverts au départ</value>
+  </data>
+  <data name="initialDepth_Desc" xml:space="preserve">
+    <value>Nombre de niveaux sous cet enregistrement développés au premier affichage. 0 montre ses enfants repliés ; 1 les affiche.</value>
+  </data>
+
+  <data name="maxChildren_Name" xml:space="preserve">
+    <value>Enfants par nœud</value>
+  </data>
+  <data name="maxChildren_Desc" xml:space="preserve">
+    <value>Nombre d'enregistrements enfants chargés sous un nœud. Un nœud qui en a davantage l'indique.</value>
+  </data>
+
+  <data name="sampleData_Name" xml:space="preserve">
+    <value>Données d'exemple (démo seulement)</value>
+  </data>
+  <data name="sampleData_Desc" xml:space="preserve">
+    <value>Un arbre JSON que le contrôle affiche au lieu d'interroger Dataverse. Pour la démo PCFHub et pour prévisualiser la mise en page ; laisser vide sur un vrai formulaire.</value>
+  </data>
+
   <data name="HierarchyView_NoAccess" xml:space="preserve">
     <value>Vous n'avez pas accès à cette valeur.</value>
+  </data>
+  <data name="HierarchyView_NotAvailable" xml:space="preserve">
+    <value>La hiérarchie n'est pas disponible sur cet hôte.</value>
+  </data>
+  <data name="HierarchyView_SaveFirst" xml:space="preserve">
+    <value>Enregistrez l'enregistrement pour voir sa hiérarchie.</value>
+  </data>
+  <data name="HierarchyView_NotALookup" xml:space="preserve">
+    <value>Ce contrôle a besoin d'une recherche vers la propre table de l'enregistrement.</value>
+  </data>
+  <data name="HierarchyView_Loading" xml:space="preserve">
+    <value>Chargement…</value>
+  </data>
+  <data name="HierarchyView_NoChildren" xml:space="preserve">
+    <value>Aucun enregistrement enfant.</value>
+  </data>
+  <data name="HierarchyView_Expand" xml:space="preserve">
+    <value>Développer {0}</value>
+  </data>
+  <data name="HierarchyView_Collapse" xml:space="preserve">
+    <value>Réduire {0}</value>
+  </data>
+  <data name="HierarchyView_Children" xml:space="preserve">
+    <value>Enfants : {0}</value>
+  </data>
+  <data name="HierarchyView_Current" xml:space="preserve">
+    <value>Cet enregistrement</value>
+  </data>
+  <data name="HierarchyView_Open" xml:space="preserve">
+    <value>Ouvrir {0}</value>
+  </data>
+  <data name="HierarchyView_LoadFailed" xml:space="preserve">
+    <value>La hiérarchie n'a pas pu être lue : {0}</value>
+  </data>
+  <data name="HierarchyView_Truncated" xml:space="preserve">
+    <value>Affichage des {0} premiers.</value>
+  </data>
+  <data name="HierarchyView_BadSample" xml:space="preserve">
+    <value>Les données d'exemple n'ont pas pu être lues.</value>
+  </data>
+  <data name="HierarchyView_Retry" xml:space="preserve">
+    <value>Réessayer</value>
   </data>
 </root>

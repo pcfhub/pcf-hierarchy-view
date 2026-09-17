@@ -72,24 +72,90 @@
   </resheader>
 
   <data name="HierarchyView_Name" xml:space="preserve">
-    <value>Hierarchy View</value>
+    <value>Hierarchieansicht</value>
   </data>
   <data name="HierarchyView_Desc" xml:space="preserve">
-    <value>A record's place in its hierarchy — ancestors above, children below — from its parent lookup.</value>
+    <value>Die Position eines Datensatzes in seiner Hierarchie – übergeordnete Datensätze oben, untergeordnete unten – aus seiner Suche nach dem übergeordneten Element.</value>
   </data>
+
   <data name="value_Name" xml:space="preserve">
-    <value>Wert</value>
+    <value>Übergeordnete Suche</value>
   </data>
   <data name="value_Desc" xml:space="preserve">
-    <value>Die Spalte, die dieses Steuerelement liest und schreibt.</value>
+    <value>Die Suche nach dem übergeordneten Datensatz derselben Tabelle – zum Beispiel „Übergeordnete Firma“. Das Steuerelement liest die Hierarchie daraus und schreibt nie hinein.</value>
   </data>
-  <data name="placeholder_Name" xml:space="preserve">
-    <value>Platzhalter</value>
+
+  <data name="detailColumns_Name" xml:space="preserve">
+    <value>Detailspalten</value>
   </data>
-  <data name="placeholder_Desc" xml:space="preserve">
-    <value>Hinweistext, der angezeigt wird, solange das Feld leer ist.</value>
+  <data name="detailColumns_Desc" xml:space="preserve">
+    <value>Logische Namen, durch Kommas getrennt, die unter dem Namen jedes Datensatzes angezeigt werden – zum Beispiel „address1_city, revenue“. Bis zu drei.</value>
   </data>
+
+  <data name="initialDepth_Name" xml:space="preserve">
+    <value>Anfangs geöffnete Ebenen</value>
+  </data>
+  <data name="initialDepth_Desc" xml:space="preserve">
+    <value>Wie viele Ebenen unter diesem Datensatz beim ersten Rendern aufgeklappt sind. 0 zeigt die untergeordneten Datensätze zugeklappt, 1 zeigt sie an.</value>
+  </data>
+
+  <data name="maxChildren_Name" xml:space="preserve">
+    <value>Untergeordnete pro Knoten</value>
+  </data>
+  <data name="maxChildren_Desc" xml:space="preserve">
+    <value>Wie viele untergeordnete Datensätze unter einem Knoten geladen werden. Ein Knoten mit mehr weist darauf hin.</value>
+  </data>
+
+  <data name="sampleData_Name" xml:space="preserve">
+    <value>Beispieldaten (nur Demo)</value>
+  </data>
+  <data name="sampleData_Desc" xml:space="preserve">
+    <value>Ein JSON-Baum, den das Steuerelement anstelle einer Dataverse-Abfrage anzeigt. Für die PCFHub-Demo und zur Vorschau des Layouts; auf einem echten Formular leer lassen.</value>
+  </data>
+
   <data name="HierarchyView_NoAccess" xml:space="preserve">
     <value>Sie haben keinen Zugriff auf diesen Wert.</value>
+  </data>
+  <data name="HierarchyView_NotAvailable" xml:space="preserve">
+    <value>Die Hierarchie ist auf diesem Host nicht verfügbar.</value>
+  </data>
+  <data name="HierarchyView_SaveFirst" xml:space="preserve">
+    <value>Speichern Sie den Datensatz, um seine Hierarchie zu sehen.</value>
+  </data>
+  <data name="HierarchyView_NotALookup" xml:space="preserve">
+    <value>Dieses Steuerelement benötigt eine Suche nach der eigenen Tabelle des Datensatzes.</value>
+  </data>
+  <data name="HierarchyView_Loading" xml:space="preserve">
+    <value>Wird geladen…</value>
+  </data>
+  <data name="HierarchyView_NoChildren" xml:space="preserve">
+    <value>Keine untergeordneten Datensätze.</value>
+  </data>
+  <data name="HierarchyView_Expand" xml:space="preserve">
+    <value>{0} aufklappen</value>
+  </data>
+  <data name="HierarchyView_Collapse" xml:space="preserve">
+    <value>{0} zuklappen</value>
+  </data>
+  <data name="HierarchyView_Children" xml:space="preserve">
+    <value>Untergeordnete: {0}</value>
+  </data>
+  <data name="HierarchyView_Current" xml:space="preserve">
+    <value>Dieser Datensatz</value>
+  </data>
+  <data name="HierarchyView_Open" xml:space="preserve">
+    <value>{0} öffnen</value>
+  </data>
+  <data name="HierarchyView_LoadFailed" xml:space="preserve">
+    <value>Die Hierarchie konnte nicht gelesen werden: {0}</value>
+  </data>
+  <data name="HierarchyView_Truncated" xml:space="preserve">
+    <value>Die ersten {0} werden angezeigt.</value>
+  </data>
+  <data name="HierarchyView_BadSample" xml:space="preserve">
+    <value>Die Beispieldaten konnten nicht gelesen werden.</value>
+  </data>
+  <data name="HierarchyView_Retry" xml:space="preserve">
+    <value>Erneut versuchen</value>
   </data>
 </root>

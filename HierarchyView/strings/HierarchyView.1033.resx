@@ -76,30 +76,89 @@
   </data>
 
   <data name="value_Name" xml:space="preserve">
-    <value>Value</value>
+    <value>Parent lookup</value>
   </data>
   <data name="value_Desc" xml:space="preserve">
-    <value>The column this control reads and writes.</value>
+    <value>The lookup to this table's own parent record — Parent Account, for example. The control reads the hierarchy from it and never writes to it.</value>
   </data>
 
-  <data name="placeholder_Name" xml:space="preserve">
-    <value>Placeholder</value>
+  <data name="detailColumns_Name" xml:space="preserve">
+    <value>Detail columns</value>
   </data>
-  <data name="placeholder_Desc" xml:space="preserve">
-    <value>Hint text shown while the field is empty.</value>
+  <data name="detailColumns_Desc" xml:space="preserve">
+    <value>Logical names, comma-separated, shown under each record's name — "address1_city, revenue", for example. Up to three.</value>
   </data>
+
+  <data name="initialDepth_Name" xml:space="preserve">
+    <value>Levels open at start</value>
+  </data>
+  <data name="initialDepth_Desc" xml:space="preserve">
+    <value>How many levels below this record are expanded on first render. 0 shows its children collapsed; 1 shows them.</value>
+  </data>
+
+  <data name="maxChildren_Name" xml:space="preserve">
+    <value>Children per node</value>
+  </data>
+  <data name="maxChildren_Desc" xml:space="preserve">
+    <value>How many child records are loaded under one node. A node with more says so.</value>
+  </data>
+
+  <data name="sampleData_Name" xml:space="preserve">
+    <value>Sample data (demo only)</value>
+  </data>
+  <data name="sampleData_Desc" xml:space="preserve">
+    <value>A JSON tree the control shows instead of querying Dataverse. For PCFHub's demo and for previewing the layout; leave blank on a real form.</value>
+  </data>
+
   <!--
     Runtime strings, read with context.resources.getString(). Anything the user
-    can read belongs here rather than as a literal in index.ts or as an input
-    property a maker hand-translates per instance.
-
-    Add a language by copying this file — HierarchyView.3082.resx for Spanish,
-    1036 French, 1031 German, 1041 Japanese — with the SAME key set, then
-    listing each one under <resources> in the manifest. A key missing from one
-    language falls back to the key name in that language only, which nobody
-    notices until a customer does.
+    can read belongs here rather than as a literal in the components. Every
+    language listed in the manifest carries the SAME key set — npm run check
+    compares them — and {0} is a placeholder the code fills.
   -->
   <data name="HierarchyView_NoAccess" xml:space="preserve">
     <value>You do not have access to this value.</value>
+  </data>
+  <data name="HierarchyView_NotAvailable" xml:space="preserve">
+    <value>The hierarchy is not available on this host.</value>
+  </data>
+  <data name="HierarchyView_SaveFirst" xml:space="preserve">
+    <value>Save the record to see its hierarchy.</value>
+  </data>
+  <data name="HierarchyView_NotALookup" xml:space="preserve">
+    <value>This control needs a lookup to the record's own table.</value>
+  </data>
+  <data name="HierarchyView_Loading" xml:space="preserve">
+    <value>Loading…</value>
+  </data>
+  <data name="HierarchyView_NoChildren" xml:space="preserve">
+    <value>No child records.</value>
+  </data>
+  <data name="HierarchyView_Expand" xml:space="preserve">
+    <value>Expand {0}</value>
+  </data>
+  <data name="HierarchyView_Collapse" xml:space="preserve">
+    <value>Collapse {0}</value>
+  </data>
+  <data name="HierarchyView_Children" xml:space="preserve">
+    <value>Children: {0}</value>
+  </data>
+  <data name="HierarchyView_Current" xml:space="preserve">
+    <value>This record</value>
+  </data>
+  <data name="HierarchyView_Open" xml:space="preserve">
+    <value>Open {0}</value>
+  </data>
+  <data name="HierarchyView_LoadFailed" xml:space="preserve">
+    <value>The hierarchy could not be read: {0}</value>
+  </data>
+  <data name="HierarchyView_Truncated" xml:space="preserve">
+    <value>Showing the first {0}.</value>
+  </data>
+  <data name="HierarchyView_BadSample" xml:space="preserve">
+    <value>The sample data could not be read.</value>
+  </data>
+  <data name="HierarchyView_Retry" xml:space="preserve">
+    <value>Try again</value>
   </data>
 </root>

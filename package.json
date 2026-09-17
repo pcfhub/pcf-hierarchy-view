@@ -1,6 +1,6 @@
 {
   "name": "pcf-hierarchy-view",
-  "version": "0.1.0",
+  "version": "0.0.1",
   "description": "A record's place in its hierarchy — ancestors above, children below — from its parent lookup.",
   "license": "MIT",
   "private": true,

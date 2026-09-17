@@ -72,24 +72,90 @@
   </resheader>
 
   <data name="HierarchyView_Name" xml:space="preserve">
-    <value>Hierarchy View</value>
+    <value>階層ビュー</value>
   </data>
   <data name="HierarchyView_Desc" xml:space="preserve">
-    <value>A record's place in its hierarchy — ancestors above, children below — from its parent lookup.</value>
+    <value>親の参照から、レコードの階層内の位置を表示します。上に祖先、下に子レコード。</value>
   </data>
+
   <data name="value_Name" xml:space="preserve">
-    <value>値</value>
+    <value>親の参照</value>
   </data>
   <data name="value_Desc" xml:space="preserve">
-    <value>このコントロールが読み書きする列。</value>
+    <value>同じテーブルの親レコードへの参照（例：親アカウント）。コントロールはここから階層を読み取り、書き込みは行いません。</value>
   </data>
-  <data name="placeholder_Name" xml:space="preserve">
-    <value>プレースホルダー</value>
+
+  <data name="detailColumns_Name" xml:space="preserve">
+    <value>詳細列</value>
   </data>
-  <data name="placeholder_Desc" xml:space="preserve">
-    <value>フィールドが空のときに表示されるヒント テキスト。</value>
+  <data name="detailColumns_Desc" xml:space="preserve">
+    <value>各レコード名の下に表示する論理名をコンマ区切りで指定します（例：「address1_city, revenue」）。最大 3 つ。</value>
   </data>
+
+  <data name="initialDepth_Name" xml:space="preserve">
+    <value>最初に開く階層数</value>
+  </data>
+  <data name="initialDepth_Desc" xml:space="preserve">
+    <value>最初の表示でこのレコードの下を何階層展開するか。0 は子を折りたたんで表示、1 は子を表示します。</value>
+  </data>
+
+  <data name="maxChildren_Name" xml:space="preserve">
+    <value>ノードあたりの子の数</value>
+  </data>
+  <data name="maxChildren_Desc" xml:space="preserve">
+    <value>1 つのノードの下に読み込む子レコードの数。それ以上ある場合はその旨を表示します。</value>
+  </data>
+
+  <data name="sampleData_Name" xml:space="preserve">
+    <value>サンプル データ（デモ専用）</value>
+  </data>
+  <data name="sampleData_Desc" xml:space="preserve">
+    <value>Dataverse に問い合わせる代わりにコントロールが表示する JSON ツリー。PCFHub のデモとレイアウトの確認用。実際のフォームでは空のままにしてください。</value>
+  </data>
+
   <data name="HierarchyView_NoAccess" xml:space="preserve">
     <value>この値にアクセスする権限がありません。</value>
+  </data>
+  <data name="HierarchyView_NotAvailable" xml:space="preserve">
+    <value>このホストでは階層を利用できません。</value>
+  </data>
+  <data name="HierarchyView_SaveFirst" xml:space="preserve">
+    <value>レコードを保存すると階層が表示されます。</value>
+  </data>
+  <data name="HierarchyView_NotALookup" xml:space="preserve">
+    <value>このコントロールには、レコード自身のテーブルへの参照が必要です。</value>
+  </data>
+  <data name="HierarchyView_Loading" xml:space="preserve">
+    <value>読み込んでいます…</value>
+  </data>
+  <data name="HierarchyView_NoChildren" xml:space="preserve">
+    <value>子レコードはありません。</value>
+  </data>
+  <data name="HierarchyView_Expand" xml:space="preserve">
+    <value>{0} を展開</value>
+  </data>
+  <data name="HierarchyView_Collapse" xml:space="preserve">
+    <value>{0} を折りたたむ</value>
+  </data>
+  <data name="HierarchyView_Children" xml:space="preserve">
+    <value>子: {0}</value>
+  </data>
+  <data name="HierarchyView_Current" xml:space="preserve">
+    <value>このレコード</value>
+  </data>
+  <data name="HierarchyView_Open" xml:space="preserve">
+    <value>{0} を開く</value>
+  </data>
+  <data name="HierarchyView_LoadFailed" xml:space="preserve">
+    <value>階層を読み取れませんでした: {0}</value>
+  </data>
+  <data name="HierarchyView_Truncated" xml:space="preserve">
+    <value>最初の {0} 件を表示しています。</value>
+  </data>
+  <data name="HierarchyView_BadSample" xml:space="preserve">
+    <value>サンプル データを読み取れませんでした。</value>
+  </data>
+  <data name="HierarchyView_Retry" xml:space="preserve">
+    <value>再試行</value>
   </data>
 </root>

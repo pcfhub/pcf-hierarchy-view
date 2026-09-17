@@ -7,7 +7,7 @@
   -->
   <control namespace="PCFHub"
            constructor="HierarchyView"
-           version="0.1.0"
+           version="0.0.1"
            display-name-key="HierarchyView_Name"
            description-key="HierarchyView_Desc"
            control-type="virtual">
@@ -49,17 +49,76 @@
       The platform still resolves these against the .resx for the maker's
       properties pane, so the keys must exist there either way.
     -->
+    <!--
+      The parent lookup: a Lookup.Simple whose target is the record's own table
+      — Account.parentaccountid, Contact.parentcustomerid where it points at
+      contact, a custom table's "Parent" column. Everything else the control
+      needs it reads from this one binding: the target table from
+      getTargetEntityType(), the column to filter children on from
+      attributes.LogicalName, and the record's own parent from raw[0].
+
+      Lookup.Simple is model-driven only, so there is no canvas page.
+    -->
     <property name="value"
               display-name-key="value_Name"
               description-key="value_Desc"
-              of-type="SingleLine.Text"
+              of-type="Lookup.Simple"
               usage="bound"
               required="true" />
 
-    <property name="placeholder"
-              display-name-key="placeholder_Name"
-              description-key="placeholder_Desc"
+    <!--
+      Logical names, comma-separated, shown under each card's title. Read as
+      formatted values, so a currency arrives with its symbol and a lookup as
+      its name. Anything that is not a logical name is dropped rather than sent
+      to the server.
+    -->
+    <property name="detailColumns"
+              display-name-key="detailColumns_Name"
+              description-key="detailColumns_Desc"
               of-type="SingleLine.Text"
+              usage="input"
+              required="false" />
+
+    <!--
+      How many levels below the current record open on first render. 0 shows
+      the record's children collapsed; 1 (the default) shows them; deeper
+      levels are loaded one query per node, so keep this small on a wide tree.
+    -->
+    <property name="initialDepth"
+              display-name-key="initialDepth_Name"
+              description-key="initialDepth_Desc"
+              of-type="Whole.None"
+              usage="input"
+              required="false"
+              default-value="1" />
+
+    <!--
+      Children loaded per node, passed as the query's page size. A node with
+      more says so rather than loading them all.
+    -->
+    <property name="maxChildren"
+              display-name-key="maxChildren_Name"
+              description-key="maxChildren_Desc"
+              of-type="Whole.None"
+              usage="input"
+              required="false"
+              default-value="50" />
+
+    <!--
+      A JSON tree the control renders INSTEAD of querying Dataverse. It exists
+      for PCFHub's demo, whose harness has no Web API, and for a maker who
+      wants to see the layout before binding it. Leave it blank on a real form:
+      when set, the control never queries, whatever the record holds.
+
+          { "current": "c1",
+            "records": [ { "id": "r1", "name": "Contoso", "parentId": null },
+                         { "id": "c1", "name": "Contoso West", "parentId": "r1",
+                           "details": { "City": "Seattle" }, "childCount": 2 } ] }
+    -->
+    <property name="sampleData"
+              display-name-key="sampleData_Name"
+              description-key="sampleData_Desc"
+              of-type="Multiple"
               usage="input"
               required="false" />
 
@@ -102,13 +161,20 @@
     </resources>
 
     <!--
-      Uncomment only the features actually used. Each one becomes a permission
-      prompt for the maker installing the control.
+      Both optional: a host without them hands the control a context lacking
+      the member, and the control names the state ("not available on this
+      host") rather than failing to load — with required="true" the component
+      would not load at all where the feature is missing.
 
-    <feature-usage>
-      <uses-feature name="Utility" required="true" />
-      <uses-feature name="WebAPI" required="true" />
-    </feature-usage>
+      WebAPI reads the hierarchy: retrieveMultipleRecords with a FetchXML query
+      on a hierarchical lookup, retrieveRecord and an OData filter on one that
+      is not. Utility supplies getEntityMetadata for the table's primary id and
+      name columns. Whether the lookup is hierarchical is read with a
+      same-origin fetch of EntityDefinitions, which no feature gates.
     -->
+    <feature-usage>
+      <uses-feature name="WebAPI" required="false" />
+      <uses-feature name="Utility" required="false" />
+    </feature-usage>
   </control>
 </manifest>

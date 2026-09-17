@@ -72,24 +72,90 @@
   </resheader>
 
   <data name="HierarchyView_Name" xml:space="preserve">
-    <value>Hierarchy View</value>
+    <value>Vista de jerarquía</value>
   </data>
   <data name="HierarchyView_Desc" xml:space="preserve">
-    <value>A record's place in its hierarchy — ancestors above, children below — from its parent lookup.</value>
+    <value>El lugar de un registro en su jerarquía — antecesores arriba, hijos abajo — a partir de su búsqueda de elemento primario.</value>
   </data>
+
   <data name="value_Name" xml:space="preserve">
-    <value>Valor</value>
+    <value>Búsqueda de elemento primario</value>
   </data>
   <data name="value_Desc" xml:space="preserve">
-    <value>La columna que este control lee y escribe.</value>
+    <value>La búsqueda al registro primario de esta misma tabla — «Cuenta primaria», por ejemplo. El control lee la jerarquía de ella y nunca escribe en ella.</value>
   </data>
-  <data name="placeholder_Name" xml:space="preserve">
-    <value>Marcador de posición</value>
+
+  <data name="detailColumns_Name" xml:space="preserve">
+    <value>Columnas de detalle</value>
   </data>
-  <data name="placeholder_Desc" xml:space="preserve">
-    <value>Texto de sugerencia que se muestra mientras el campo está vacío.</value>
+  <data name="detailColumns_Desc" xml:space="preserve">
+    <value>Nombres lógicos, separados por comas, mostrados bajo el nombre de cada registro — «address1_city, revenue», por ejemplo. Hasta tres.</value>
   </data>
+
+  <data name="initialDepth_Name" xml:space="preserve">
+    <value>Niveles abiertos al inicio</value>
+  </data>
+  <data name="initialDepth_Desc" xml:space="preserve">
+    <value>Cuántos niveles bajo este registro se expanden en la primera presentación. 0 muestra sus hijos contraídos; 1 los muestra.</value>
+  </data>
+
+  <data name="maxChildren_Name" xml:space="preserve">
+    <value>Hijos por nodo</value>
+  </data>
+  <data name="maxChildren_Desc" xml:space="preserve">
+    <value>Cuántos registros hijos se cargan bajo un nodo. Un nodo con más lo indica.</value>
+  </data>
+
+  <data name="sampleData_Name" xml:space="preserve">
+    <value>Datos de ejemplo (solo demo)</value>
+  </data>
+  <data name="sampleData_Desc" xml:space="preserve">
+    <value>Un árbol JSON que el control muestra en lugar de consultar Dataverse. Para la demo de PCFHub y para previsualizar el diseño; déjelo en blanco en un formulario real.</value>
+  </data>
+
   <data name="HierarchyView_NoAccess" xml:space="preserve">
     <value>No tiene acceso a este valor.</value>
+  </data>
+  <data name="HierarchyView_NotAvailable" xml:space="preserve">
+    <value>La jerarquía no está disponible en este host.</value>
+  </data>
+  <data name="HierarchyView_SaveFirst" xml:space="preserve">
+    <value>Guarde el registro para ver su jerarquía.</value>
+  </data>
+  <data name="HierarchyView_NotALookup" xml:space="preserve">
+    <value>Este control necesita una búsqueda a la propia tabla del registro.</value>
+  </data>
+  <data name="HierarchyView_Loading" xml:space="preserve">
+    <value>Cargando…</value>
+  </data>
+  <data name="HierarchyView_NoChildren" xml:space="preserve">
+    <value>No hay registros hijos.</value>
+  </data>
+  <data name="HierarchyView_Expand" xml:space="preserve">
+    <value>Expandir {0}</value>
+  </data>
+  <data name="HierarchyView_Collapse" xml:space="preserve">
+    <value>Contraer {0}</value>
+  </data>
+  <data name="HierarchyView_Children" xml:space="preserve">
+    <value>Hijos: {0}</value>
+  </data>
+  <data name="HierarchyView_Current" xml:space="preserve">
+    <value>Este registro</value>
+  </data>
+  <data name="HierarchyView_Open" xml:space="preserve">
+    <value>Abrir {0}</value>
+  </data>
+  <data name="HierarchyView_LoadFailed" xml:space="preserve">
+    <value>No se pudo leer la jerarquía: {0}</value>
+  </data>
+  <data name="HierarchyView_Truncated" xml:space="preserve">
+    <value>Mostrando los primeros {0}.</value>
+  </data>
+  <data name="HierarchyView_BadSample" xml:space="preserve">
+    <value>No se pudieron leer los datos de ejemplo.</value>
+  </data>
+  <data name="HierarchyView_Retry" xml:space="preserve">
+    <value>Reintentar</value>
   </data>
 </root>
