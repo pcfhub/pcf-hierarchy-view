@@ -1,12 +1,21 @@
 {
   "schemaVersion": 1,
-
   "slug": "pcf-hierarchy-view",
   "name": "Hierarchy View",
   "tagline": "A record's place in its hierarchy — ancestors above, children below — from its parent lookup.",
   "category": "visualisation",
-  "tags": [],
-
+  "tags": [
+    "react",
+    "hierarchy",
+    "tree",
+    "org-chart",
+    "lookup",
+    "parent",
+    "dataverse",
+    "model-driven",
+    "read-only",
+    "accessible"
+  ],
   "control": {
     "namespace": "PCFHub",
     "constructor": "HierarchyView",
@@ -14,24 +23,141 @@
     "framework": "react_virtual",
     "manifestPath": "HierarchyView/ControlManifest.Input.xml"
   },
-
   "links": {
     "homepage": "https://github.com/pcfhub/pcf-hierarchy-view",
     "support": "https://github.com/pcfhub/pcf-hierarchy-view/issues",
     "license": "MIT"
   },
-
   "docs": {
     "path": "docs"
   },
-
   "media": {
     "logo": "media/logo.png",
-    "screenshots": []
+    "screenshots": [
+      "media/screenshot.png",
+      "media/screenshot-expanded.png",
+      "media/screenshot-fallback.png",
+      "media/screenshot-dark.png",
+      "media/screenshot-narrow.png"
+    ]
   },
-
   "demo": {
-    "fidelity": "none",
-    "presets": []
+    "fidelity": "mocked",
+    "bundle": "out/controls/HierarchyView/bundle.js",
+    "styles": [
+      "out/controls/HierarchyView/css/HierarchyView.css"
+    ],
+    "limitations": [
+      "The tree comes from the preset's Sample data, not from Dataverse. On a form the control reads the record's ancestors and children through context.webAPI — a FetchXML eq-or-above query on a hierarchical lookup, retrieveRecord and an OData $filter on one that is not — and there is no environment behind this origin to answer, so every preset carries a JSON tree in the sampleData property and the control renders that. Expanding a node and Show all children work against the same tree.",
+      "Which of the two routes a real form would take cannot be shown. The decision reads the relationship's IsHierarchical flag from EntityDefinitions, and the harness has no metadata to read; the presets carry childCount where a hierarchical lookup would supply it and omit it where the fallback route would not know.",
+      "Clicking a name opens nothing. The card calls navigation.openForm, and there is no form here to open — the harness reports the call and the tree stays.",
+      "The detail texts are the preset's own strings. On a form they are the platform's formatted values — a currency with its symbol, a choice as its label, a lookup as the related record's name.",
+      "Everything that never leaves the browser is real: the indented tree with its guide lines, the marked current record, chevrons and expansion, the show-all affordance on an ancestor, the narrow layout, dark, RTL, and the hidden and no-access states."
+    ],
+    "presets": [
+      {
+        "slug": "mid-level",
+        "name": "A record in the middle",
+        "description": "Two ancestors above, two children below, a sibling waiting behind Show all children. The state most accounts are in.",
+        "isDefault": true,
+        "props": {
+          "value": [
+            {
+              "id": "p1",
+              "name": "Contoso Europe",
+              "entityType": "account"
+            }
+          ],
+          "detailColumns": "address1_city, revenue",
+          "initialDepth": 1,
+          "maxChildren": 50,
+          "sampleData": "{\"current\":\"c1\",\"records\":[{\"id\":\"r1\",\"name\":\"Contoso Holdings\",\"parentId\":null,\"details\":{\"City\":\"Redmond\",\"Revenue\":\"$1,200,000,000.00\"},\"childCount\":2},{\"id\":\"p1\",\"name\":\"Contoso Europe\",\"parentId\":\"r1\",\"details\":{\"City\":\"Amsterdam\",\"Revenue\":\"$340,000,000.00\"},\"childCount\":2},{\"id\":\"c1\",\"name\":\"Contoso Deutschland GmbH\",\"parentId\":\"p1\",\"details\":{\"City\":\"Frankfurt\",\"Revenue\":\"$120,000,000.00\"},\"childCount\":2},{\"id\":\"s1\",\"name\":\"Contoso France SARL\",\"parentId\":\"p1\",\"details\":{\"City\":\"Paris\",\"Revenue\":\"$98,000,000.00\"},\"childCount\":0},{\"id\":\"k1\",\"name\":\"Contoso Berlin\",\"parentId\":\"c1\",\"details\":{\"City\":\"Berlin\",\"Revenue\":\"$15,000,000.00\"},\"childCount\":1},{\"id\":\"k2\",\"name\":\"Contoso München — Niederlassung Süd, Vertrieb und Service\",\"parentId\":\"c1\",\"childCount\":0},{\"id\":\"g1\",\"name\":\"Contoso Berlin Mitte\",\"parentId\":\"k1\",\"details\":{\"City\":\"Berlin\",\"Revenue\":\"$2,000,000.00\"},\"childCount\":0},{\"id\":\"o1\",\"name\":\"Contoso Americas\",\"parentId\":\"r1\",\"details\":{\"City\":\"New York\",\"Revenue\":\"$610,000,000.00\"},\"childCount\":1},{\"id\":\"o2\",\"name\":\"Contoso Canada\",\"parentId\":\"o1\",\"details\":{\"City\":\"Toronto\",\"Revenue\":\"$74,000,000.00\"},\"childCount\":0}]}"
+        }
+      },
+      {
+        "slug": "root",
+        "name": "The top of the tree",
+        "description": "The record has no parent, so the tree starts with it.",
+        "props": {
+          "value": [],
+          "detailColumns": "address1_city, revenue",
+          "initialDepth": 1,
+          "maxChildren": 50,
+          "sampleData": "{\"current\":\"r1\",\"records\":[{\"id\":\"r1\",\"name\":\"Contoso Holdings\",\"parentId\":null,\"details\":{\"City\":\"Redmond\",\"Revenue\":\"$1,200,000,000.00\"},\"childCount\":2},{\"id\":\"p1\",\"name\":\"Contoso Europe\",\"parentId\":\"r1\",\"details\":{\"City\":\"Amsterdam\",\"Revenue\":\"$340,000,000.00\"},\"childCount\":2},{\"id\":\"c1\",\"name\":\"Contoso Deutschland GmbH\",\"parentId\":\"p1\",\"details\":{\"City\":\"Frankfurt\",\"Revenue\":\"$120,000,000.00\"},\"childCount\":2},{\"id\":\"s1\",\"name\":\"Contoso France SARL\",\"parentId\":\"p1\",\"details\":{\"City\":\"Paris\",\"Revenue\":\"$98,000,000.00\"},\"childCount\":0},{\"id\":\"k1\",\"name\":\"Contoso Berlin\",\"parentId\":\"c1\",\"details\":{\"City\":\"Berlin\",\"Revenue\":\"$15,000,000.00\"},\"childCount\":1},{\"id\":\"k2\",\"name\":\"Contoso München — Niederlassung Süd, Vertrieb und Service\",\"parentId\":\"c1\",\"childCount\":0},{\"id\":\"g1\",\"name\":\"Contoso Berlin Mitte\",\"parentId\":\"k1\",\"details\":{\"City\":\"Berlin\",\"Revenue\":\"$2,000,000.00\"},\"childCount\":0},{\"id\":\"o1\",\"name\":\"Contoso Americas\",\"parentId\":\"r1\",\"details\":{\"City\":\"New York\",\"Revenue\":\"$610,000,000.00\"},\"childCount\":1},{\"id\":\"o2\",\"name\":\"Contoso Canada\",\"parentId\":\"o1\",\"details\":{\"City\":\"Toronto\",\"Revenue\":\"$74,000,000.00\"},\"childCount\":0}]}"
+        }
+      },
+      {
+        "slug": "leaf",
+        "name": "A leaf",
+        "description": "Three ancestors, no children — the record says so instead of drawing an empty chevron.",
+        "props": {
+          "value": [
+            {
+              "id": "k1",
+              "name": "Contoso Berlin",
+              "entityType": "account"
+            }
+          ],
+          "detailColumns": "address1_city, revenue",
+          "initialDepth": 1,
+          "maxChildren": 50,
+          "sampleData": "{\"current\":\"g1\",\"records\":[{\"id\":\"r1\",\"name\":\"Contoso Holdings\",\"parentId\":null,\"details\":{\"City\":\"Redmond\",\"Revenue\":\"$1,200,000,000.00\"},\"childCount\":2},{\"id\":\"p1\",\"name\":\"Contoso Europe\",\"parentId\":\"r1\",\"details\":{\"City\":\"Amsterdam\",\"Revenue\":\"$340,000,000.00\"},\"childCount\":2},{\"id\":\"c1\",\"name\":\"Contoso Deutschland GmbH\",\"parentId\":\"p1\",\"details\":{\"City\":\"Frankfurt\",\"Revenue\":\"$120,000,000.00\"},\"childCount\":2},{\"id\":\"s1\",\"name\":\"Contoso France SARL\",\"parentId\":\"p1\",\"details\":{\"City\":\"Paris\",\"Revenue\":\"$98,000,000.00\"},\"childCount\":0},{\"id\":\"k1\",\"name\":\"Contoso Berlin\",\"parentId\":\"c1\",\"details\":{\"City\":\"Berlin\",\"Revenue\":\"$15,000,000.00\"},\"childCount\":1},{\"id\":\"k2\",\"name\":\"Contoso München — Niederlassung Süd, Vertrieb und Service\",\"parentId\":\"c1\",\"childCount\":0},{\"id\":\"g1\",\"name\":\"Contoso Berlin Mitte\",\"parentId\":\"k1\",\"details\":{\"City\":\"Berlin\",\"Revenue\":\"$2,000,000.00\"},\"childCount\":0},{\"id\":\"o1\",\"name\":\"Contoso Americas\",\"parentId\":\"r1\",\"details\":{\"City\":\"New York\",\"Revenue\":\"$610,000,000.00\"},\"childCount\":1},{\"id\":\"o2\",\"name\":\"Contoso Canada\",\"parentId\":\"o1\",\"details\":{\"City\":\"Toronto\",\"Revenue\":\"$74,000,000.00\"},\"childCount\":0}]}"
+        }
+      },
+      {
+        "slug": "deep",
+        "name": "Three levels open",
+        "description": "initialDepth 3 opens the children and the grandchildren on first render — one query per node on a form.",
+        "props": {
+          "value": [
+            {
+              "id": "r1",
+              "name": "Contoso Holdings",
+              "entityType": "account"
+            }
+          ],
+          "detailColumns": "address1_city, revenue",
+          "initialDepth": 3,
+          "maxChildren": 50,
+          "sampleData": "{\"current\":\"p1\",\"records\":[{\"id\":\"r1\",\"name\":\"Contoso Holdings\",\"parentId\":null,\"details\":{\"City\":\"Redmond\",\"Revenue\":\"$1,200,000,000.00\"},\"childCount\":2},{\"id\":\"p1\",\"name\":\"Contoso Europe\",\"parentId\":\"r1\",\"details\":{\"City\":\"Amsterdam\",\"Revenue\":\"$340,000,000.00\"},\"childCount\":2},{\"id\":\"c1\",\"name\":\"Contoso Deutschland GmbH\",\"parentId\":\"p1\",\"details\":{\"City\":\"Frankfurt\",\"Revenue\":\"$120,000,000.00\"},\"childCount\":2},{\"id\":\"s1\",\"name\":\"Contoso France SARL\",\"parentId\":\"p1\",\"details\":{\"City\":\"Paris\",\"Revenue\":\"$98,000,000.00\"},\"childCount\":0},{\"id\":\"k1\",\"name\":\"Contoso Berlin\",\"parentId\":\"c1\",\"details\":{\"City\":\"Berlin\",\"Revenue\":\"$15,000,000.00\"},\"childCount\":1},{\"id\":\"k2\",\"name\":\"Contoso München — Niederlassung Süd, Vertrieb und Service\",\"parentId\":\"c1\",\"childCount\":0},{\"id\":\"g1\",\"name\":\"Contoso Berlin Mitte\",\"parentId\":\"k1\",\"details\":{\"City\":\"Berlin\",\"Revenue\":\"$2,000,000.00\"},\"childCount\":0},{\"id\":\"o1\",\"name\":\"Contoso Americas\",\"parentId\":\"r1\",\"details\":{\"City\":\"New York\",\"Revenue\":\"$610,000,000.00\"},\"childCount\":1},{\"id\":\"o2\",\"name\":\"Contoso Canada\",\"parentId\":\"o1\",\"details\":{\"City\":\"Toronto\",\"Revenue\":\"$74,000,000.00\"},\"childCount\":0}]}"
+        }
+      },
+      {
+        "slug": "plain",
+        "name": "Names only",
+        "description": "No detail columns — the tree as it looks on a form nobody configured further, with a long name wrapping.",
+        "props": {
+          "value": [
+            {
+              "id": "p1",
+              "name": "Contoso Europe",
+              "entityType": "account"
+            }
+          ],
+          "detailColumns": "",
+          "initialDepth": 1,
+          "maxChildren": 50,
+          "sampleData": "{\"current\":\"c1\",\"records\":[{\"id\":\"r1\",\"name\":\"Contoso Holdings\",\"parentId\":null,\"details\":{\"City\":\"Redmond\",\"Revenue\":\"$1,200,000,000.00\"},\"childCount\":2},{\"id\":\"p1\",\"name\":\"Contoso Europe\",\"parentId\":\"r1\",\"details\":{\"City\":\"Amsterdam\",\"Revenue\":\"$340,000,000.00\"},\"childCount\":2},{\"id\":\"c1\",\"name\":\"Contoso Deutschland GmbH\",\"parentId\":\"p1\",\"details\":{\"City\":\"Frankfurt\",\"Revenue\":\"$120,000,000.00\"},\"childCount\":2},{\"id\":\"s1\",\"name\":\"Contoso France SARL\",\"parentId\":\"p1\",\"details\":{\"City\":\"Paris\",\"Revenue\":\"$98,000,000.00\"},\"childCount\":0},{\"id\":\"k1\",\"name\":\"Contoso Berlin\",\"parentId\":\"c1\",\"details\":{\"City\":\"Berlin\",\"Revenue\":\"$15,000,000.00\"},\"childCount\":1},{\"id\":\"k2\",\"name\":\"Contoso München — Niederlassung Süd, Vertrieb und Service\",\"parentId\":\"c1\",\"childCount\":0},{\"id\":\"g1\",\"name\":\"Contoso Berlin Mitte\",\"parentId\":\"k1\",\"details\":{\"City\":\"Berlin\",\"Revenue\":\"$2,000,000.00\"},\"childCount\":0},{\"id\":\"o1\",\"name\":\"Contoso Americas\",\"parentId\":\"r1\",\"details\":{\"City\":\"New York\",\"Revenue\":\"$610,000,000.00\"},\"childCount\":1},{\"id\":\"o2\",\"name\":\"Contoso Canada\",\"parentId\":\"o1\",\"details\":{\"City\":\"Toronto\",\"Revenue\":\"$74,000,000.00\"},\"childCount\":0}]}"
+        }
+      },
+      {
+        "slug": "no-sample",
+        "name": "No sample data",
+        "description": "What the harness shows without a sample: the control cannot reach a Web API here, and says so rather than inventing a tree.",
+        "props": {
+          "value": [
+            {
+              "id": "p1",
+              "name": "Contoso Europe",
+              "entityType": "account"
+            }
+          ],
+          "detailColumns": "address1_city, revenue",
+          "initialDepth": 1,
+          "maxChildren": 50,
+          "sampleData": ""
+        }
+      }
+    ]
   }
 }

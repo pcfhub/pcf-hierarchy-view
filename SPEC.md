@@ -56,6 +56,28 @@ fallback route.
 
 Both routes pass `maxChildren` as `maxPageSize` and stop there.
 
+## What the build disagreed with
+
+- **The suite crashed on a plain object, not the control.** The rig's Web API
+  methods read `if (fails()) return fails();` — two rejected promises where
+  one was meant, the first unhandled — and Node reported an unhandled
+  rejection with reason `#<Object>`, which looked like the control rejecting
+  wrongly. Fixed in `_template` and here: one refusal per call.
+- **A dispatch from inside an effect re-runs the effect before the loop that
+  dispatched has finished.** The loading effect marks each pending node
+  `loading` and then asks for its children; the mark re-renders, the effect
+  runs again, and without a set the loop owns the second run asked for the same
+  children a second time. `inflight` in the component is that set.
+- **The Fluent stub swallowed the `icon` slot**, so a chevron-only `Button`
+  was an empty box on the harness page while the props said otherwise. The
+  stub renders the icon before the children now, in `_template` and here.
+- **A route is a fact about the organisation, and the harness has one.**
+  `isHierarchical` is cached per organisation URL and the control's resolve is
+  memoised on a key that carries that URL — correct on a form, where neither
+  changes — so flipping *hierarchical*, *relationships* or *Web API fails* on
+  the harness page did nothing until the page started treating each flip as a
+  fresh organisation (`host.nextClientUrl()`).
+
 ## Demo
 
 `mocked`. The control's whole content comes from `context.webAPI`, which the
@@ -76,6 +98,27 @@ would take, and formatted values (the preset's are literal strings).
 - The phone client and Power Pages.
 - A hierarchy deeper than the platform's 100-recursion limit for hierarchical
   operators, and a node with more than 5,000 children.
+
+## Screenshots
+
+Headless Chrome against `dev/preview.html` on the harness server
+(`npm run harness -- --port 8096 --no-open`), at
+`--force-device-scale-factor=2 --virtual-time-budget=4000 --hide-scrollbars`;
+the page's `?width=` sets the width the host allocates and the root's, and
+the window is 32 wider for the page's padding:
+
+| File | Query | Window |
+| --- | --- | --- |
+| `screenshot.png` | `?width=760` | 792×314 |
+| `screenshot-expanded.png` | `?showall=p1&expand=k1&width=760` | 792×394 |
+| `screenshot-fallback.png` | `?hierarchical=false&width=760` | 792×314 |
+| `screenshot-dark.png` | `?dark=1&showall=p1&width=760` | 792×344 |
+| `screenshot-narrow.png` | `?width=320&depth=2` | 352×344 |
+
+Heights are `document.body.scrollHeight` read off the page first. New file
+names on every retake — the hub's mirror never re-fetches a path. The logo is
+`media/logo.svg` in an `<img>` at 256 on a transparent body with
+`--default-background-color=00000000`, checked RGBA by reading the IHDR.
 
 ## Promoting a finding
 

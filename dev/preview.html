@@ -3,39 +3,43 @@
   The control, rendered in a real browser, for looking at.
 
       npm run build
-      then open this file, or point headless Chrome at it to capture a picture
-
-  ---
+      npm run harness            then open /dev/preview.html on that server,
+                                 or point headless Chrome at it for a picture
 
   **Why this exists alongside `smoke.js`.** That file loads the same bundle in
   Node and asserts what the control *decided*. This one renders it, and the two
-  answer different questions. A stray ellipsis beside every checkbox was
-  invisible to every assertion for three reviews and obvious in one screenshot;
-  it was the user agent's `text-overflow`, drawn on a cell nobody had looked at
-  in pixels.
+  answer different questions: a chevron drawn over a badge, a guide line one
+  pixel off its column, are invisible to every assertion and obvious in a
+  picture.
 
-  **And why it is a browser page rather than `react-dom/server`.** The suite
-  renders with `renderToStaticMarkup`, which runs no effects and dispatches no
-  events. Since 0.3.1 the editing state lives in React state driven by an effect
-  — asking the platform which cells this user may write — and a click. Neither
-  happens under the server renderer, so a server-rendered picture of this
-  control can only ever show the state before any of it has run. Here, effects
-  run and `?edit` can click a cell.
+  **And why it is a browser page rather than `react-dom/server`.** The tree is
+  loaded by effects — the chain, then each open node's children — and the
+  server renderer runs none of them, so it can only ever show the loading
+  state. Here they run against the rig's Web API, which answers from
+  `fixture.js`.
 
-  The Fluent components are stubbed: `FluentProvider` becomes a `<div>` and the
-  theme is empty, so every `var(--colorX, fallback)` in the stylesheet resolves
-  to its literal fallback. That is the light theme, and it is the honest limit of
-  this page — it shows layout and the fallbacks, and nothing about the real
-  Fluent palette a form would supply.
+  Fluent is `fluent-stub.js`: `FluentProvider` is a `<div>` publishing only the
+  tokens the theme carries, `Button` a real button with its appearance as a
+  class, `Spinner` a CSS ring. Every `var(--colorX, fallback)` in the stylesheet
+  resolves to its literal fallback, which is the honest limit of this page — it
+  shows layout and the fallbacks, not the real Fluent palette a form supplies.
 
   Query parameters, all optional:
 
-    ?pinStart=1&pinEnd=1   pin that many columns at each end
-    ?edit=1                turn editing on
-    ?open=1                and open the first editable cell's editor
-    ?filter=in             type a filter into the first text column
-    ?select=none|single|multiple
-    ?page=25               page size
+    ?identity=none         an unsaved record: the save-first state
+    ?hierarchical=false    the lookup nobody flagged: the fallback route
+    ?relationships=403     the metadata read refused (also 0 for offline)
+    ?webapi=false          no Web API: the not-available state
+    ?webapifails=1         a Web API that refuses: the error state
+    ?security=no-access    field-level security denies read
+    ?details=a,b           detail columns (default address1_city, revenue)
+    ?depth=2               levels open at start
+    ?max=1                 children per node
+    ?sample=<json>         sample data instead of a query
+    ?expand=k1,g1          click those nodes' chevrons after the tree loads
+    ?showall=p1            press Show all children on that ancestor
+    ?dark=1  ?rtl=1        theme and direction
+    ?width=320             the width the host allocates (and the page's)
 -->
 <html lang="en">
 <head>
@@ -43,13 +47,12 @@
     <title>Hierarchy View — preview</title>
     <link rel="stylesheet" href="../out/controls/HierarchyView/css/HierarchyView.css" />
     <style>
-        /*
-          Nothing here styles the control. It stands in for the host page, so
-          the picture has the padding and ground a form would give it — and so
-          the screenshot has a margin rather than bleeding to the edge.
-        */
+        /* Nothing here styles the control; this is the host page's ground. */
         body { margin: 0; padding: 16px; background: #ffffff; font-family: 'Segoe UI', system-ui, sans-serif; }
+        body.is-dark { background: #292929; }
         #root { max-width: 100%; }
+        /* A headless screenshot is taken at t=0 of every transition. */
+        * { transition: none !important; animation: none !important; }
     </style>
 </head>
 <body>
@@ -59,25 +62,23 @@
 <script src="../node_modules/react-dom/umd/react-dom.development.js"></script>
 <script src="fixture.js"></script>
 <script src="host.js"></script>
+<script>
+    // The stub reads React off these two names, as harness.html sets them.
+    window.__harnessReact = window.React;
+    window.__harnessReactDOM = window.ReactDOM;
+</script>
+<script src="fluent-stub.js"></script>
 
 <script>
     /*
-      The platform globals, under the names the bundle asks for.
-
-      `pcf-scripts` maps a `<platform-library>` version onto the build it
-      supports, so Fluent 9.46.2 arrives as `FluentUIReactv940`. If a version
-      bump ever changes those names this page fails loudly on the next line
-      rather than rendering an empty box — which is what `smoke.js` avoids by
-      reading the names out of the bundle, and what is not worth the machinery
-      here.
+      The platform globals, under the names the bundle asks for. `pcf-scripts`
+      maps a `<platform-library>` version onto the build it supports, so Fluent
+      9.46.2 arrives as `FluentUIReactv940`. A version bump that changes those
+      names fails loudly on the bundle's first line rather than rendering an
+      empty box.
     */
     window.Reactv16 = window.React;
-    window.FluentUIReactv940 = {
-        FluentProvider: function (props) {
-            return React.createElement('div', { dir: props.dir }, props.children);
-        },
-        webLightTheme: {},
-    };
+    window.FluentUIReactv940 = window.__harnessFluent;
 
     var registration = window.__pcfHost.captureRegistration(window);
 </script>
@@ -85,7 +86,7 @@
 <script src="../out/controls/HierarchyView/bundle.js"></script>
 
 <script>
-    (async function () {
+    (function () {
         'use strict';
 
         var host = window.__pcfHost;
@@ -99,155 +100,90 @@
             return;
         }
 
-        /*
-          **Which fixture, and it matters for a picture.**
+        var width = Number(params.get('width')) || (window.innerWidth - 32);
+        var dark = params.get('dark') === '1';
 
-          `dev/fixture.js` exists to break things: nulls, an overlong name, raw
-          numbers. Its `getFormattedValue` is `String(value)`, so revenue renders
-          as `4200000` — a control that does not exist, since a real platform
-          formats it. `demo/records.json` is the hub's demo fixture and carries
-          values already formatted the way a form shows them, which is what a
-          published screenshot should be of.
-
-          Default stays the edge-case one, because the common use of this page is
-          looking at the states that break.
-        */
-        if (params.get('fixture') === 'demo') {
-            var response = await fetch('../demo/records.json');
-
-            fixture = await response.json();
+        if (dark) {
+            document.body.classList.add('is-dark');
         }
 
-        /*
-          A column the fixture marks `isReadOnly` must answer `isEditable`
-          false here too, or this rig is more permissive than both the hub's
-          demo harness and a real form — and a screenshot taken from it would
-          show an editor over a cell the platform refuses. Derived from the
-          fixture rather than hard-coded, so one JSON file drives both hosts.
-        */
-        var readOnly = (fixture.columns || [])
-            .filter(function (column) { return column.isReadOnly; })
-            .map(function (column) { return column.name; });
+        root.style.width = width + 'px';
 
-        var number = function (name) {
-            var raw = params.get(name);
-
-            return raw === null || raw === '' ? null : Number(raw);
+        var hierarchical = params.get('hierarchical');
+        var options = {
+            valueType: 'Lookup.Simple',
+            column: 'parentaccountid',
+            target: 'account',
+            value: fixture.parentLookup,
+            contextInfo: params.get('identity') === 'none' ? null : { entityId: fixture.current, entityTypeName: 'account' },
+            fixture: fixture,
+            clientUrl: host.nextClientUrl(),
+            width: width,
+            dark: dark,
+            rtl: params.get('rtl') === '1',
+            webAPI: params.get('webapi') !== 'false',
+            webApiFails: params.get('webapifails') === '1',
+            relationshipsStatus: params.has('relationships') ? Number(params.get('relationships')) : 200,
+            hierarchical: hierarchical === 'true' ? true : hierarchical === 'false' ? false : undefined,
+            security: params.get('security') || 'none',
+            label: 'Parent Account',
+            inputs: {
+                detailColumns: params.has('details') ? params.get('details') : 'address1_city, revenue',
+                initialDepth: params.has('depth') ? Number(params.get('depth')) : 1,
+                maxChildren: params.has('max') ? Number(params.get('max')) : 50,
+                sampleData: params.get('sample') || '',
+            },
         };
 
-        var handle = host.createHost(fixture, {
-            // A real width, because the pinning clamp reads it and a control
-            // that never subscribed reads -1. The page is what sizes the
-            // picture; this is what the control is told.
-            width: window.innerWidth - 32,
-            // Values as a platform would render them; see makeDisplay in host.js.
-            format: true,
-            height: 600,
-            inputs: {
-                selectionMode: params.get('select') || 'multiple',
-                enableSorting: true,
-                enableFiltering: true,
-                enableExport: true,
-                openOnRowClick: true,
-                pageSize: number('page'),
-                pageSizeOptions: params.get('sizes'),
-                pinnedStart: number('pinStart'),
-                pinnedEnd: number('pinEnd'),
-                enableEditing: params.get('edit') === '1',
-                editableColumns: params.get('editable'),
-            },
-            quirks: readOnly.length ? { readOnlyColumns: readOnly } : undefined,
-        });
-
         var instance = new registration.ctor();
-
-        /*
-          Paint through `drive`, not through a single `updateView`.
-
-          A dataset control's mutators do not take effect until the next fetch,
-          so `applyPageSize` calls `refresh()` and the first pass renders
-          against data that is already stale. `drive` runs until the host owes
-          nothing, which is what a platform does across several `updateView`
-          calls, and hands back the last element.
-        */
-        var painting = false;
+        var context = host.createContext(options);
 
         function paint() {
-            // `notifyOutputChanged` fires during a write, and a re-entrant
-            // paint would recurse through the same render.
-            if (painting) {
-                return;
-            }
-
-            painting = true;
-
-            try {
-                ReactDOM.render(host.drive(instance, handle, 10).element, root);
-            } finally {
-                painting = false;
-            }
+            ReactDOM.render(instance.updateView(context), root);
         }
 
-        instance.init(handle.context, paint, {}, root);
+        instance.init(context, paint, {}, root);
         paint();
 
         /*
-          Everything below is for a *captured* picture rather than for a person
-          looking at the page: headless Chrome cannot click, so the states worth
-          photographing have to arrange themselves.
-
-          The delay is for the editability answers. `isEditable` is a promise on
-          the platform and a promise here, so the editors do not exist on the
-          first paint — a screenshot taken synchronously would show the
-          read-only fallback and look like the feature was missing.
+          For a *captured* picture: headless Chrome cannot click, so the states
+          worth photographing arrange themselves once the tree has loaded.
         */
-        window.setTimeout(function () {
-            var filter = params.get('filter');
+        function rowNamed(id) {
+            var name = (fixture.tables.account.filter(function (row) { return row.accountid === id; })[0] || {}).name;
 
-            if (filter) {
-                var box = document.querySelector('.DataTable-filter');
+            return Array.prototype.slice.call(document.querySelectorAll('[role=treeitem]')).filter(function (li) {
+                var title = li.querySelector('.HierarchyView-name, .HierarchyView-open');
 
-                if (box) {
-                    var setter = Object.getOwnPropertyDescriptor(
-                        window.HTMLInputElement.prototype,
-                        'value',
-                    ).set;
+                return title && title.textContent === name;
+            })[0];
+        }
 
-                    // React tracks the previous value on the node, so assigning
-                    // `.value` directly is swallowed as "no change". Going
-                    // through the prototype setter is what makes the synthetic
-                    // event carry the new value.
-                    setter.call(box, filter);
-                    box.dispatchEvent(new Event('input', { bubbles: true }));
+        function press(ids, selector) {
+            ids.forEach(function (id) {
+                var row = rowNamed(id);
+                var button = row && row.querySelector(selector);
+
+                if (button) {
+                    button.click();
                 }
-            }
+            });
+        }
 
-            /*
-              A pinned column only reads as pinned once something has scrolled
-              past it. Nothing in a headless capture can scroll, so the page
-              does it — and this is the only way to photograph the feature at
-              all.
-            */
-            var scroll = Number(params.get('scroll'));
+        var expand = (params.get('expand') || '').split(',').filter(Boolean);
+        var showAll = (params.get('showall') || '').split(',').filter(Boolean);
 
-            if (scroll > 0) {
-                var pane = document.querySelector('.DataTable-scroll');
-
-                if (pane) {
-                    pane.scrollLeft = scroll;
-                }
-            }
-
-            if (params.get('open') === '1') {
-                var trigger = document.querySelector('.DataTable-editTrigger');
-
-                if (trigger) {
-                    trigger.click();
-                }
-            }
-
-            document.title = 'ready';
-        }, 400);
+        if (expand.length || showAll.length) {
+            setTimeout(function () {
+                press(showAll, '.HierarchyView-showall');
+                press(expand, '.HierarchyView-toggle');
+                // A second pass for nodes that only appeared after the first,
+                // pressing only chevrons that are still closed.
+                setTimeout(function () {
+                    press(expand, '.HierarchyView-toggle:not(.HierarchyView-toggle--open)');
+                }, 200);
+            }, 150);
+        }
     })();
 </script>
 </body>

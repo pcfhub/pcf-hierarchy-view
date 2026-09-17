@@ -9,76 +9,62 @@ Documentation lives on [PCFHub](https://pcfhub.dev/components/pcf-hierarchy-view
 from the `docs/` directory in this repository. Edit the Markdown here; the hub
 recompiles it.
 
-<!--
-  This README is for someone standing in the repository — a maintainer, or
-  somebody deciding whether to install the control. The hub publishes `docs/`,
-  not this file, so do not duplicate the documentation here.
-
-  The three sections below are the ones worth writing by hand. Everything after
-  them is the same in every repository and needs no edits.
-
-  **Each carries a placeholder, and `npm run check` fails while one remains.**
-  That is deliberate: an unwritten README is the first thing a visitor to the
-  repository sees, and the version of this file that shipped before had worked
-  examples sitting in it that read as real content. One of them — a bound
-  `value` property — was wrong for every control that is not a field control,
-  and reached a published repository.
-
-  Delete these comments once the sections are written. They are instructions to
-  you, and they are noise on a public page.
--->
 
 ## What it does
 
-__WHAT_IT_DOES__
+Bound to the lookup that points at a record's own table — *Parent Account*,
+*Manager*, a custom table's *Parent* — it draws the record's position in that
+hierarchy on the form: every ancestor to the top, the record marked, its
+children beneath, each expandable one level at a time. Click a name to open
+that record. Model-driven apps removed their built-in hierarchy visualisation
+in October 2025; this is the replacement, on the form rather than behind a
+button.
 
-<!--
-  A few paragraphs, not a feature list. Answer what the built-in control does
-  not do, then spend the rest on the one or two decisions a reader would
-  otherwise question — the binding shape, a behaviour that looks like a bug
-  until you know why, a constraint you chose to accept.
+Two decisions a reader will otherwise question. **It is bound to the parent
+lookup and never writes it** — the binding is the whole configuration (target
+table, filter column and the record's own parent all come off it), and a
+tree that could also re-parent by drag would need a confirmation flow this
+control does not carry. And **it takes one of two routes**, decided by asking
+the relationship metadata whether the lookup is flagged hierarchical: with the
+flag, one FetchXML `eq-or-above` query reads the whole ancestor chain and a
+`CountChildren` aggregate puts a chevron only where there are children;
+without it — the usual state of a custom table — it walks up one
+`retrieveRecord` per level and filters children on the lookup, and every node
+gets a chevron until it is opened. A refused or unreachable metadata read
+takes the second route silently rather than showing an error.
 
-  This is the section that saves an issue being opened.
--->
+An ancestor shows only the branch that leads to the record, with *Show all
+children* to load the rest, so a wide tree does not arrive at once; children
+come a page at a time per node, by name.
 
 ## Properties
 
-__PROPERTIES__
+| Property | Type | Usage | Default | What it controls |
+| --- | --- | --- | --- | --- |
+| `value` | Lookup.Simple | bound, **required** | — | The self-referential lookup the hierarchy is read from. Never written. |
+| `detailColumns` | SingleLine.Text | input | — | Comma-separated logical names shown under each record, three at most; formatted values. |
+| `initialDepth` | Whole.None | input | `1` | Levels below the record open on first render, 0–5. |
+| `maxChildren` | Whole.None | input | `50` | Children loaded per node (the query's page size), 1–250. |
+| `sampleData` | Multiple | input | — | A JSON tree rendered instead of querying — for the hub's demo. Blank on a real form. |
 
-<!--
-  The whole configuration surface, including the defaults. `docs/api.md`
-  generates its tables from the manifest; this one is hand-written, so keep it
-  short enough to stay true. Read them out of the manifest rather than from
-  memory, and check them against `generated/ManifestTypes.d.ts`.
-
-  A field control's table looks like this — one row per property, and for a
-  dataset control a second table for the `property-set` roles above it, giving
-  both the display name a maker sees and the manifest name the code looks up by:
-
-      | Property | Type | Usage | Default | What it controls |
-      | --- | --- | --- | --- | --- |
-      | `value` | SingleLine.Text | bound, **required** | — | The column this control reads and writes |
-
-  Follow it with the notes that do not fit a table: which languages the .resx
-  ship, whether the control bundles a framework or uses the platform's, which
-  `uses-feature` permissions a maker is asked for at install, and any property
-  whose accepted values need spelling out.
--->
+A React (virtual) control on the platform's React 16.14 and Fluent UI 9.46;
+neither is bundled. Strings ship in English, German, French, Japanese and
+Spanish. Two features are declared, both optional, and both prompt the maker at
+install: `WebAPI` (reading the hierarchy) and `Utility` (the table's primary
+columns). The relationship metadata is read with a same-origin `fetch` that no
+feature gates.
 
 ## On the hub
 
-__ON_THE_HUB__
-
-<!--
-  What `demo.fidelity` is, and *why* it is that and not the next one up. A
-  `limited` demo should say which interactions do not work there; a `full` one
-  is worth explaining, because it follows from the control not reaching Web API,
-  device or navigation — which is also one fewer permission prompt for the maker
-  installing it.
-
-  Mention what the presets cover. Delete this section if fidelity is `none` —
-  and delete the placeholder with it, or the check will go on failing.
--->
+`demo.fidelity` is **mocked**. The control's whole content comes from
+`context.webAPI`, which the hub's harness does not supply, so a demo that ran
+the control as-is would show its *not available on this host* state and nothing
+else. `sampleData` exists for this: a JSON tree the control renders instead of
+querying, documented as demo-only, and every preset carries one — a record in
+the middle, the top of the tree, a leaf, three levels open, names only — plus a
+preset with no sample that shows the honest empty state. What the demo cannot
+show: a card click (`openForm` has no form to open there), which of the two
+routes a real form would take, and the platform's own formatted values.
 
 ## Install
 
