@@ -17,25 +17,52 @@ under *The two routes* rests on one of them, so nothing under 0.1.0 was written
 before the answers came back. Answers are recorded here with the environment
 and the date.
 
-**Environment:** the Accounts form on the `cll365` test environment, the control
-bound to *Parent Account* (`parentaccountid`), on an account with a parent, a
-grandparent, a sibling and at least two children.
+**Environment:** the Accounts form on `cll365` (`https://cll365.crm.dynamics.com`),
+2026-09-17, the control bound to *Parent Account* (`parentaccountid`), first on
+*City Power & Light (sample)* (parent Blue Yonder Airlines, one child), then —
+after P8 navigated there — on *Blue Yonder Airlines (sample)* (no parent, three
+children, five descendants). Every answer came back the same on both records.
+Nothing was cut; two answers removed work (P4: no pre-check of the refusal
+shape is needed, and P10: the truncation signal is the cookie, not `nextLink`).
 
 | # | Question | Decides | Answer |
 | --- | --- | --- | --- |
-| P1 | Does `context.webAPI.retrieveMultipleRecords(entity, '?fetchXml=…')` accept a FetchXML query, and does it want the XML URL-encoded or raw? What is the error shape of the loser? | `queryString()` in `query/fetchXml.ts` | *pending* |
-| P2 | Do rows returned from a FetchXML query carry `@OData.Community.Display.V1.FormattedValue` annotations, and `_parentaccountid_value` for the lookup? | `toNode()` reads formatted values | *pending* |
-| P3 | Does `<attribute name='accountid' rowaggregate='CountChildren' alias='children'/>` come back, as a number or a string, and does it coexist with plain attributes without `aggregate='true'`? | the child-count badge, or its absence | *pending* |
-| P4 | `eq-or-above` on a self-referential lookup that is **not** hierarchical (`masterid` on account): the `errorCode` and `message` | the rig's refusal shape; whether a pre-check is needed at all | *pending* |
-| P5 | A same-origin `fetch` of `EntityDefinitions(LogicalName='account')/OneToManyRelationships?$select=…,IsHierarchical`: status, elapsed, `IsHierarchical` true for `parentaccountid` and false for `masterid`; is `page.getClientUrl` present on a field control | `isHierarchical()` | *pending* |
-| P6 | The keys of `parameters.value` and of its `attributes` on a bound `Lookup.Simple`; is `attributes.LogicalName === 'parentaccountid'`; what is `type` | `resolveBoundColumn()` | *pending* |
-| P7 | `mode.contextInfo.entityId` on a saved record (braces? case?) and on an unsaved one | the *save the record first* state | *pending* |
-| P8 | `navigation.openForm({ entityName, entityId })` from a field control: present, navigates, what it resolves with | a card click | *pending* |
-| P9 | `getTargetEntityType()` returns `account`; `raw[0].entityType` agrees; `getViewId()` | `resolveTarget()` | *pending* |
-| P10 | With a FetchXML query and `maxPageSize = 1` on a node with two children: one row, and is `nextLink` or `fetchXmlPagingCookie` set | the *showing the first N* notice | *pending* |
-| P11 | `utils.getEntityMetadata('account')`: `PrimaryIdAttribute`, `PrimaryNameAttribute`, elapsed | the title column and the primary key | *pending* |
-| P12 | The fallback route: OData `$filter=_parentaccountid_value eq <id>` returns the children with formatted values; `retrieveRecord(parent, '?$select=…')` returns the parent | `childrenOData()`, the ancestor walk | *pending* |
-| P13 | `under` on the current record: the descendant count, as a sanity check on the tree the form shows | nothing — a cross-check | *pending* |
+| P1 | Does `context.webAPI.retrieveMultipleRecords(entity, '?fetchXml=…')` accept a FetchXML query, and does it want the XML URL-encoded or raw? What is the error shape of the loser? | `queryString()` in `query/fetchXml.ts` | Both. Encoded (`encodeURIComponent`) and raw XML each returned the same 2 rows; the raw spelling stays the default, as the Client API reference documents. |
+| P2 | Do rows returned from a FetchXML query carry `@OData.Community.Display.V1.FormattedValue` annotations, and `_parentaccountid_value` for the lookup? | `toNode()` reads formatted values | Yes. `_parentaccountid_value@OData.Community.Display.V1.FormattedValue`, `…@Microsoft.Dynamics.CRM.lookuplogicalname` and `…associatednavigationproperty` beside `_parentaccountid_value`; the root row carried **no** `_parentaccountid_value` at all — a FetchXML result omits nulls, as documented. |
+| P3 | Does `<attribute name='accountid' rowaggregate='CountChildren' alias='children'/>` come back, as a number or a string, and does it coexist with plain attributes without `aggregate='true'`? | the child-count badge, or its absence | Yes, as a **number** (`1`, `3`), beside the plain attributes, no `aggregate='true'`, with its own `@…FormattedValue` and `@…AttributeName` annotations. The same query without the aggregate returned the same rows. |
+| P4 | `eq-or-above` on a self-referential lookup that is **not** hierarchical (`masterid` on account): the `errorCode` and `message` | the rig's refusal shape; whether a pre-check is needed at all | Refused as a plain object: `errorCode` and `code` both `2147746307`, `title` "Invalid Argument", `message` "Invalid Argument.", keys `errorCode, message, code, title, raw`. The server says nothing about hierarchy — which is why the control asks the metadata, not the query. The rig sends this shape now. |
+| P5 | A same-origin `fetch` of `EntityDefinitions(LogicalName='account')/OneToManyRelationships?$select=…,IsHierarchical`: status, elapsed, `IsHierarchical` true for `parentaccountid` and false for `masterid`; is `page.getClientUrl` present on a field control | `isHierarchical()` | `page.getClientUrl()` is present on a field control and answered `https://cll365.crm.dynamics.com`. The fetch returned 200 in 153 ms with 58 rows, three self-referential: `parentaccountid` **true**, `masterid` false, `msa_managingpartnerid` false. |
+| P6 | The keys of `parameters.value` and of its `attributes` on a bound `Lookup.Simple`; is `attributes.LogicalName === 'parentaccountid'`; what is `type` | `resolveBoundColumn()` | `attributes.LogicalName` = `parentaccountid`, `DisplayName` = "Parent Account", `Targets` = `["account"]`, `Type` = `lookup`; `type` = `Lookup.Simple`; `security` = `{ secured: false, editable: true, readable: true }`. The property bag itself is dataset-shaped (`records`, `paging`, `sorting`, `filtering`, `columns`, `linking`, `addColumn`…) — a lookup binding is a one-row dataset underneath. **`raw` was `[]` on the first pass** of a record whose parent is set; the row read back through FetchXML carried the parent. The control never depends on `raw[0]`. |
+| P7 | `mode.contextInfo.entityId` on a saved record (braces? case?) and on an unsaved one | the *save the record first* state | `{ entityTypeName: "account", entityId: "83e84297-9486-ec11-93b0-000d3a5c8441", entityRecordName: "City Power & Light (sample)" }` — bare, lower-case, no braces, plus the record's name. An unsaved record was not tried (see *Not verified*). |
+| P8 | `navigation.openForm({ entityName, entityId })` from a field control: present, navigates, what it resolves with | a card click | Present, and it navigates in place: the button opened the parent, and the control remounted on the parent's form with its `contextInfo.entityId`. What the promise resolves with was not observed — the page had moved on. |
+| P9 | `getTargetEntityType()` returns `account`; `raw[0].entityType` agrees; `getViewId()` | `resolveTarget()` | `getTargetEntityType()` = `account`. `raw[0].entityType` was `undefined` because `raw` was empty (P6). **`getViewId()` returned `null`**, not a string — the typings say string. |
+| P10 | With a FetchXML query and `maxPageSize = 1` on a node with two children: one row, and is `nextLink` or `fetchXmlPagingCookie` set | the *showing the first N* notice | One row. On a node with one child, no continuation; on a node with three, **`fetchXmlPagingCookie`** was set (a `<cookie pagenumber="2" pagingcookie="…">`) and `nextLink` stayed `undefined`. The `nextLink` key is always present on the result, undefined or not. The source reads either signal. |
+| P11 | `utils.getEntityMetadata('account')`: `PrimaryIdAttribute`, `PrimaryNameAttribute`, elapsed | the title column and the primary key | `PrimaryIdAttribute` = `accountid`, `PrimaryNameAttribute` = `name`, `EntitySetName` = `accounts`, in 2–3 ms; own keys are the private `_…` fields, so the read is by name. |
+| P12 | The fallback route: OData `$filter=_parentaccountid_value eq <id>` returns the children with formatted values; `retrieveRecord(parent, '?$select=…')` returns the parent | `childrenOData()`, the ancestor walk | `?$select=…&$filter=_parentaccountid_value eq <id>&$orderby=name asc` returned the children (`@odata.etag`, `accountid`, `name`, and the lookup omitted where null); `retrieveRecord(parent, ?$select=…)` returned the row with `@odata.context`, plus `merged` and `statecode` the platform adds unasked. |
+| P13 | `under` on the current record: the descendant count, as a sanity check on the tree the form shows | nothing — a cross-check | `under` on City Power & Light: 1 descendant; on Blue Yonder Airlines: 5 — consistent with the counts the aggregate gave. |
+
+## Platform behaviour worth knowing
+
+Observed on the form, 2026-09-17, beyond what the probe asked:
+
+- **A bound `Lookup.Simple` is a one-row dataset underneath.** Its property
+  bag carries `records`, `paging`, `sorting`, `filtering`, `columns`,
+  `linking`, `addColumn` and the rest of a dataset's surface beside `raw`,
+  `type` and `attributes`. Nothing here reads any of it, but a control that
+  does `Object.keys` on the property for a reason will meet forty names.
+- **`raw` was empty on the first pass** for a record whose parent is set, and
+  the FetchXML row confirmed the parent. Whether a later pass fills it was not
+  watched — the control reads the parent off the row, never off `raw[0]`, so
+  it did not matter here. A control that *does* need `raw[0]` on the first pass
+  should not assume it.
+- **`getViewId()` returns `null`** on this binding, against typings that say
+  `string`. Unused here; recorded because `pcf-lookup-search` reads it.
+- **`openForm` from a field control navigates in place**, and the control is
+  destroyed and re-inited on the record it opened — which is the behaviour
+  the docs promise and the reason the current record's card is not a link.
+- **`retrieveRecord` adds columns you did not ask for**: `merged` and
+  `statecode` came back beside the three requested, with their formatted
+  values. Harmless; a `$select` is a floor, not a ceiling.
 
 ## The two routes
 
@@ -90,7 +117,11 @@ would take, and formatted values (the preset's are literal strings).
 
 ## Not verified
 
-- Every row of the table above until its *Answer* is filled in.
+- **An unsaved record's `contextInfo`** — the *save the record first* state
+  was reached in the rig only; the form was not opened on a new account.
+- **What `openForm` resolves with** from a field control; the page had
+  navigated before the promise settled.
+- **Whether `raw` fills on a later pass** (P6) — not watched, not needed.
 - An on-premises organisation URL with the organisation in the path
   (`https://host/org/api/data/…`) — `page.getClientUrl()` is preferred over a
   root-relative URL for that reason, following Data Table 0.5.0, but no
@@ -98,6 +129,22 @@ would take, and formatted values (the preset's are literal strings).
 - The phone client and Power Pages.
 - A hierarchy deeper than the platform's 100-recursion limit for hierarchical
   operators, and a node with more than 5,000 children.
+
+## Walkthrough — 0.1.0 on the form
+
+The built control, imported over the probe on the same Accounts form, bound to
+*Parent Account*. Each row is something the rig showed and the form has to
+confirm; the tag follows the answers.
+
+| # | On the form | Expected | Answer |
+| --- | --- | --- | --- |
+| W1 | Open *City Power & Light (sample)* | Blue Yonder Airlines above it (badge 3), City Power marked *This record* with badge 1, its one child beneath, collapsed with a chevron | *pending* |
+| W2 | Press *Show all children* under Blue Yonder | City Power's two siblings appear beside it, by name; City Power keeps its mark and its child | *pending* |
+| W3 | Press the chevron on the child | Its children load (or the chevron goes and no note appears if the count was 0 — it should not be 0, the badge said 1) | *pending* |
+| W4 | Click a sibling's name | The form navigates to that record and the control redraws around it | *pending* |
+| W5 | Set *Detail columns* to `address1_city, revenue` and reload | City and formatted revenue under each name; a record with neither shows no second line | *pending* |
+| W6 | Open a **new** account (unsaved) | *Save the record to see its hierarchy.* — then save, and the tree appears | *pending* |
+| W7 | Bind a second instance to *Master ID* (`masterid`, not hierarchical) on the same form | The tree still draws, with chevrons on every node and no badges: the fallback route | *pending* |
 
 ## Screenshots
 

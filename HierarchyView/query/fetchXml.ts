@@ -100,9 +100,10 @@ export const childrenFetchXml = (q: QueryShape, parentId: string): string =>
  *
  * The Client API reference says an OData query "should be encoded" and a
  * FetchXML one "should not be"; the PCF reference says only that the
- * `fetchXml` parameter takes the query. The 0.0.1 probe sends both spellings
- * (SPEC.md, P1) and this constant follows its answer. It is the one place the
- * decision lives.
+ * `fetchXml` parameter takes the query. **Measured on the Accounts form
+ * (2026-09-17, SPEC.md P1): the platform accepts both spellings** and returned
+ * the same rows for each, so this follows the documentation. It is the one
+ * place the decision lives, should a host ever disagree.
  */
 export const FETCHXML_ENCODED = false;
 
