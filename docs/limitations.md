@@ -35,9 +35,10 @@ Each of these is a constraint that was chosen, not a defect waiting on a fix.
 - **An ancestor the user cannot read ends the chain there.** The tree starts at
   the top-most record the user is allowed to see, without saying that anything
   sits above it. Saying so would leak that a record exists.
-- **Below 480 pixels the detail lines are hidden** and the indent tightens, so
-  four levels still fit a phone. The measurement is the control's own width,
-  not the browser's — a narrow form column on a desktop does the same.
+- **Below 480 pixels the indent tightens** from 24 to 16 pixels per level, so
+  four levels still fit a phone; nothing is hidden. The measurement is the
+  control's own width, not the browser's — a narrow form column on a desktop
+  does the same.
 - **Sample data is for the demo.** While *Sample data (demo only)* holds
   anything, the control renders it and never queries. It is documented as
   such, defaults to blank, and belongs blank on a real form.

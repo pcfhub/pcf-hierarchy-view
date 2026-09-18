@@ -99,15 +99,34 @@
  * the component sets per row, so the DOM stays one level deep and a screen
  * reader still hears the depth.
  *
+ * **The row is the surface, and the chevron sits inside it.** The first build
+ * reserved a chevron column to the left of every card, and the top row's card
+ * therefore sat 26px right of where the form's other fields start — the first
+ * thing the Accounts form showed (0.1.0 walkthrough, W6). Fluent's own Tree
+ * draws it this way: one full-width row per node, the indent and the chevron
+ * inside it, so the leftmost row lines up with the label whatever its depth.
+ *
  * Nothing here uses `container-type`: the root of a code component sits in a
  * shrink-to-fit parent on a form, and size containment zeroes its intrinsic
  * width — every form collapsed to a sliver when Calendar View 0.1.3 tried it.
- * Narrow is a class the component sets from a ResizeObserver.
+ * Narrow is a class the component sets from a ResizeObserver, and it only
+ * tightens the indent: the detail lines stay, because a two-column form
+ * section is under 480px and hiding them there hid them everywhere (W5).
  */
+.HierarchyView {
+    --HierarchyView-indent: 24px;
+    --HierarchyView-toggle: 24px;
+    --HierarchyView-pad: var(--spacingHorizontalXS, 4px);
+}
+
+.HierarchyView--narrow {
+    --HierarchyView-indent: 16px;
+}
+
 .HierarchyView .HierarchyView-root {
     width: 100%;
     box-sizing: border-box;
-    padding: var(--spacingVerticalXS, 4px) 0;
+    padding: var(--spacingVerticalXXS, 2px) 0;
 }
 
 .HierarchyView .HierarchyView-tree {
@@ -117,50 +136,60 @@
 }
 
 .HierarchyView .HierarchyView-item {
-    position: relative;
     margin: 0;
-    padding: 0 0 0 calc(var(--HierarchyView-depth, 0) * 24px);
-}
-
-.HierarchyView[dir="rtl"] .HierarchyView-item {
-    padding: 0 calc(var(--HierarchyView-depth, 0) * 24px) 0 0;
+    padding: 0;
 }
 
 /*
- * The guide line joining a node to its children: drawn on the row's left
- * edge, offset into the indent, so a deep subtree reads as one column of
- * descent rather than as staggered text.
+ * The row: Fluent's `filled-darker` surface, the shape a model-driven form
+ * draws its fields in, spanning the control's whole width. The depth goes
+ * into its leading padding.
  */
-.HierarchyView .HierarchyView-item[aria-level]:not([aria-level="1"])::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    left: calc(var(--HierarchyView-depth, 0) * 24px - 12px);
-    border-left: 1px solid var(--HierarchyView-stroke-disabled);
-}
-
-.HierarchyView[dir="rtl"] .HierarchyView-item[aria-level]:not([aria-level="1"])::before {
-    left: auto;
-    right: calc(var(--HierarchyView-depth, 0) * 24px - 12px);
-    border-left: 0;
-    border-right: 1px solid var(--HierarchyView-stroke-disabled);
-}
-
 .HierarchyView .HierarchyView-row {
     display: flex;
     align-items: flex-start;
     gap: var(--spacingHorizontalXXS, 2px);
+    box-sizing: border-box;
     min-height: 32px;
+    margin: 2px 0;
+    padding: var(--spacingVerticalXS, 4px) var(--spacingHorizontalS, 8px) var(--spacingVerticalXS, 4px)
+        calc(var(--HierarchyView-depth, 0) * var(--HierarchyView-indent) + var(--HierarchyView-pad));
+    border: 1px solid var(--HierarchyView-stroke);
+    border-radius: var(--HierarchyView-radius);
+    background-color: var(--HierarchyView-background);
+    transition: background-color var(--HierarchyView-duration-faster) var(--HierarchyView-curve-ease);
 }
 
-/* The chevron button: Fluent's small subtle Button, square, 24px. */
+.HierarchyView[dir="rtl"] .HierarchyView-row {
+    padding: var(--spacingVerticalXS, 4px)
+        calc(var(--HierarchyView-depth, 0) * var(--HierarchyView-indent) + var(--HierarchyView-pad))
+        var(--spacingVerticalXS, 4px) var(--spacingHorizontalS, 8px);
+}
+
+.HierarchyView .HierarchyView-row:hover {
+    background-color: var(--HierarchyView-background-hover);
+}
+
+/* The record the form is open on: the brand stroke on its leading edge. */
+.HierarchyView .HierarchyView-item--current > .HierarchyView-row {
+    border-left: 3px solid var(--HierarchyView-stroke-focus);
+    padding-left: calc(var(--HierarchyView-depth, 0) * var(--HierarchyView-indent) + var(--HierarchyView-pad) - 2px);
+}
+
+.HierarchyView[dir="rtl"] .HierarchyView-item--current > .HierarchyView-row {
+    border-left: 1px solid var(--HierarchyView-stroke);
+    border-right: 3px solid var(--HierarchyView-stroke-focus);
+    padding-left: var(--spacingHorizontalS, 8px);
+    padding-right: calc(var(--HierarchyView-depth, 0) * var(--HierarchyView-indent) + var(--HierarchyView-pad) - 2px);
+}
+
+/* The chevron button: Fluent's small subtle Button, square, 24px, inside the row. */
 .HierarchyView .HierarchyView-toggle {
     flex: 0 0 auto;
-    width: 24px;
-    min-width: 24px;
+    width: var(--HierarchyView-toggle);
+    min-width: var(--HierarchyView-toggle);
     height: 24px;
-    margin-top: 4px;
+    margin: -2px 0;
     padding: 0;
     color: var(--HierarchyView-foreground-secondary);
 }
@@ -182,38 +211,11 @@
     transform: rotate(90deg);
 }
 
-/*
- * The card: Fluent's `filled-darker` surface, the shape a model-driven form
- * draws its fields in, so a row reads as belonging to the form. The current
- * record gets the brand stroke on its leading edge — the one thing on the
- * page the user is looking for.
- */
+/* The card is the row's text; the surface is the row's. */
 .HierarchyView .HierarchyView-card {
     flex: 1 1 auto;
     min-width: 0;
-    box-sizing: border-box;
-    margin: 2px 0;
-    padding: var(--spacingVerticalXS, 4px) var(--spacingHorizontalS, 8px);
-    border: 1px solid var(--HierarchyView-stroke);
-    border-radius: var(--HierarchyView-radius);
-    background-color: var(--HierarchyView-background);
-    transition: background-color var(--HierarchyView-duration-faster) var(--HierarchyView-curve-ease);
-}
-
-.HierarchyView .HierarchyView-row:hover .HierarchyView-card {
-    background-color: var(--HierarchyView-background-hover);
-}
-
-.HierarchyView .HierarchyView-item--current > .HierarchyView-row .HierarchyView-card {
-    border-left: 3px solid var(--HierarchyView-stroke-focus);
-    padding-left: calc(var(--spacingHorizontalS, 8px) - 2px);
-}
-
-.HierarchyView[dir="rtl"] .HierarchyView-item--current > .HierarchyView-row .HierarchyView-card {
-    border-left: 1px solid var(--HierarchyView-stroke);
-    border-right: 3px solid var(--HierarchyView-stroke-focus);
-    padding-left: var(--spacingHorizontalS, 8px);
-    padding-right: calc(var(--spacingHorizontalS, 8px) - 2px);
+    padding-left: var(--spacingHorizontalXXS, 2px);
 }
 
 .HierarchyView .HierarchyView-title {
@@ -312,19 +314,22 @@
     overflow-wrap: anywhere;
 }
 
-/* Under the card: loading, a failure with its retry, a truncation, "show all". */
+/*
+ * Under the row: loading, a failure with its retry, a truncation, "show all".
+ * Indented to the row's text, so it reads as belonging to the node above.
+ */
 .HierarchyView .HierarchyView-note {
     display: flex;
     align-items: center;
     gap: var(--spacingHorizontalXS, 4px);
-    margin: 0 0 2px 26px;
+    margin: 0 0 2px calc(var(--HierarchyView-depth, 0) * var(--HierarchyView-indent) + var(--HierarchyView-pad) + var(--HierarchyView-toggle) + 4px);
     color: var(--HierarchyView-foreground-secondary);
     font-size: var(--HierarchyView-font-size-caption);
     line-height: var(--HierarchyView-line-height-caption);
 }
 
 .HierarchyView[dir="rtl"] .HierarchyView-note {
-    margin: 0 26px 2px 0;
+    margin: 0 calc(var(--HierarchyView-depth, 0) * var(--HierarchyView-indent) + var(--HierarchyView-pad) + var(--HierarchyView-toggle) + 4px) 2px 0;
 }
 
 .HierarchyView .HierarchyView-note--failed {
@@ -352,31 +357,4 @@
 
 .HierarchyView .HierarchyView-message[role="alert"] {
     color: var(--HierarchyView-foreground-danger);
-}
-
-/*
- * Narrow: the details go, the indent tightens, so four levels still fit a
- * phone. A class, measured by the component — never a viewport query, which
- * cannot see a narrow section on a wide screen.
- */
-.HierarchyView--narrow .HierarchyView-details {
-    display: none;
-}
-
-.HierarchyView--narrow .HierarchyView-item {
-    padding-left: calc(var(--HierarchyView-depth, 0) * 16px);
-}
-
-.HierarchyView--narrow[dir="rtl"] .HierarchyView-item {
-    padding-left: 0;
-    padding-right: calc(var(--HierarchyView-depth, 0) * 16px);
-}
-
-.HierarchyView--narrow .HierarchyView-item[aria-level]:not([aria-level="1"])::before {
-    left: calc(var(--HierarchyView-depth, 0) * 16px - 8px);
-}
-
-.HierarchyView--narrow[dir="rtl"] .HierarchyView-item[aria-level]:not([aria-level="1"])::before {
-    left: auto;
-    right: calc(var(--HierarchyView-depth, 0) * 16px - 8px);
 }

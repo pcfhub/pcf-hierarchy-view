@@ -46,7 +46,7 @@ relationship was ever flagged as hierarchical.
 | Host | Works | Notes |
 | --- | --- | --- |
 | Model-driven form (web) | Yes | Both routes, counts on a hierarchical lookup |
-| Model-driven form (phone, tablet) | Yes | Details hidden below 480px; not yet measured on the phone client |
+| Model-driven form (phone, tablet) | Yes | The indent tightens below 480px; not yet measured on the phone client |
 | Canvas app | No | Binds a `Lookup.Simple`, which canvas cannot |
 | Power Pages | No | No Web API from a code component there |
 

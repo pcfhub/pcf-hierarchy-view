@@ -64,7 +64,7 @@ record is not a link.
 
 ## Does it work offline / on the phone?
 
-It renders in the phone layout — the details hide below 480 pixels — and it
-needs a connection, because everything it shows is read from Dataverse when the
+It renders in the phone layout — below 480 pixels the indent tightens so four
+levels still fit — and it needs a connection, because everything it shows is read from Dataverse when the
 form opens. It has not yet been opened on the phone client itself; see
 [Limitations](limitations.md).

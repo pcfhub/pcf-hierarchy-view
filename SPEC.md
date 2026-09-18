@@ -130,21 +130,24 @@ would take, and formatted values (the preset's are literal strings).
 - A hierarchy deeper than the platform's 100-recursion limit for hierarchical
   operators, and a node with more than 5,000 children.
 
-## Walkthrough — 0.1.0 on the form
+## Walkthrough — 0.1.0 on the form, 2026-09-18
 
 The built control, imported over the probe on the same Accounts form, bound to
-*Parent Account*. Each row is something the rig showed and the form has to
-confirm; the tag follows the answers.
+*Parent Account*. Each row is something the rig showed and the form had to
+confirm. Two rows found defects the rig and the screenshots had both missed —
+both about the control's *width on a form*, which no rig models and the
+screenshots were taken too wide to show — and 0.1.1 carries the fixes, so
+0.1.1 is the first release.
 
 | # | On the form | Expected | Answer |
 | --- | --- | --- | --- |
-| W1 | Open *City Power & Light (sample)* | Blue Yonder Airlines above it (badge 3), City Power marked *This record* with badge 1, its one child beneath, collapsed with a chevron | *pending* |
-| W2 | Press *Show all children* under Blue Yonder | City Power's two siblings appear beside it, by name; City Power keeps its mark and its child | *pending* |
-| W3 | Press the chevron on the child | Its children load (or the chevron goes and no note appears if the count was 0 — it should not be 0, the badge said 1) | *pending* |
-| W4 | Click a sibling's name | The form navigates to that record and the control redraws around it | *pending* |
-| W5 | Set *Detail columns* to `address1_city, revenue` and reload | City and formatted revenue under each name; a record with neither shows no second line | *pending* |
-| W6 | Open a **new** account (unsaved) | *Save the record to see its hierarchy.* — then save, and the tree appears | *pending* |
-| W7 | Bind a second instance to *Master ID* (`masterid`, not hierarchical) on the same form | The tree still draws, with chevrons on every node and no badges: the fallback route | *pending* |
+| W1 | Open *City Power & Light (sample)* | Blue Yonder Airlines above it (badge 3), City Power marked *This record* with badge 1, its one child beneath, collapsed with a chevron | As expected, except the child (Fabrikam) arrived open rather than collapsed — `initialDepth` 1 opens the current record's children, which is what the docs say; the expectation here was misworded. |
+| W2 | Press *Show all children* under Blue Yonder | City Power's two siblings appear beside it, by name; City Power keeps its mark and its child | Yes — Alpine Ski House (1) above, Coho Winery below, by name; City Power kept its mark, its badge and Fabrikam. |
+| W3 | Press the chevron on the child | Its children load (or the chevron goes and no note appears if the count was 0 — it should not be 0, the badge said 1) | Yes — Alpine Ski House opened to Adventure Works. |
+| W4 | Click a sibling's name | The form navigates to that record and the control redraws around it | Yes. |
+| W5 | Set *Detail columns* to `address1_city, revenue` and reload | City and formatted revenue under each name; a record with neither shows no second line | **Nothing appeared.** The control's column on the form is about 280px wide, and 0.1.0 hid the detail lines below 480px — a rule written for a phone that fired on every two-column section. 0.1.1 never hides them; narrow only tightens the indent. |
+| W6 | Open a **new** account (unsaved) | *Save the record to see its hierarchy.* — then save, and the tree appears | The tree appeared after the save, as a single marked row with *No child records.* — **but 26px right of the form's other fields**: every row reserved a chevron column to the left of its card, so the top row's card never lined up with the label. 0.1.1 makes the row the surface with the chevron inside it, as Fluent's Tree does. |
+| W7 | Bind a second instance to *Master ID* (`masterid`, not hierarchical) on the same form | The tree still draws, with chevrons on every node and no badges: the fallback route | Not run — *Master ID* is the merge lookup, read-only and usually off the form. The route's two halves were measured separately (P5 answers `false` for it; P12 is the OData it would send), so this would confirm the drawing only. Left open. |
 
 ## Screenshots
 
@@ -156,11 +159,11 @@ the window is 32 wider for the page's padding:
 
 | File | Query | Window |
 | --- | --- | --- |
-| `screenshot.png` | `?width=760` | 792×314 |
-| `screenshot-expanded.png` | `?showall=p1&expand=k1&width=760` | 792×394 |
-| `screenshot-fallback.png` | `?hierarchical=false&width=760` | 792×314 |
-| `screenshot-dark.png` | `?dark=1&showall=p1&width=760` | 792×344 |
-| `screenshot-narrow.png` | `?width=320&depth=2` | 352×344 |
+| `screenshot.png` | `?width=760` | 792×300 |
+| `screenshot-expanded.png` | `?showall=p1&expand=k1&width=760` | 792×380 |
+| `screenshot-fallback.png` | `?hierarchical=false&width=760` | 792×300 |
+| `screenshot-dark.png` | `?dark=1&showall=p1&width=760` | 792×330 |
+| `screenshot-narrow.png` | `?width=300&depth=2` | 332×380 |
 
 Heights are `document.body.scrollHeight` read off the page first. New file
 names on every retake — the hub's mirror never re-fetches a path. The logo is

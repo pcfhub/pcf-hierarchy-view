@@ -62,7 +62,12 @@ export interface IProps {
 /** `{0}` → the value. The .resx moves the placeholder per language; the code never assumes where. */
 export const fill = (template: string, value: string | number): string => template.replace('{0}', String(value));
 
-/** Below this width the details are hidden and the cards tighten. Measured, not queried. */
+/**
+ * Below this width the indent tightens from 24px to 16px so four levels still
+ * fit. Measured off the root, never queried off the viewport. The details stay:
+ * a two-column form section is under 480px, and hiding them there (0.1.0) hid
+ * them on the form the control was built for.
+ */
 export const NARROW_BELOW = 480;
 
 /**

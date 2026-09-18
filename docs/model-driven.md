@@ -18,8 +18,10 @@ order: 4
 :::
 
 :::callout{type=info}
-Put it in its own section, full width. The tree is as tall as the hierarchy is
-deep, and a narrow column hides the detail lines to keep four levels legible.
+Put it in its own section if you can. The tree is as tall as the hierarchy is
+deep and as wide as the column it is in; it works in a two-column section, where
+the indent tightens, and best across a full-width one, where long names stop
+wrapping.
 :::
 
 ## The column it binds
