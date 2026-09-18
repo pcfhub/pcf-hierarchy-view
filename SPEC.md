@@ -105,6 +105,15 @@ Both routes pass `maxChildren` as `maxPageSize` and stop there.
   the harness page did nothing until the page started treating each flip as a
   fresh organisation (`host.nextClientUrl()`).
 
+- **The hub's demo found the sample route ignoring an input (0.1.1 → 0.1.2).**
+  The *Names only* preset switched `detailColumns` to blank on a mounted
+  control and the details stayed: in sample mode the nodes carried the
+  sample's own `details` whatever the input said, and the sample route's key
+  did not include the input, so the switch could not have restarted the tree
+  either. Now blank means names only in sample mode too, and the key carries
+  it. The third host again — an input that changes after `init` — reaching a
+  branch the form never takes, because a form's sample data is always blank.
+
 ## Demo
 
 `mocked`. The control's whole content comes from `context.webAPI`, which the

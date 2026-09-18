@@ -58,8 +58,9 @@ than that shows the first page and says so.
 
 `current` names the record the tree is drawn around; `parentId` is another
 record's `id` or `null`; `details` is up to three label → text pairs shown
-as typed; `childCount` is optional and decides whether a chevron is drawn
-before the node is opened. Ids are any non-empty strings. A record whose
+as typed — and shown only while **Detail columns** is non-blank, so the same
+sample can be seen with and without them; `childCount` is optional and
+decides whether a chevron is drawn before the node is opened. Ids are any non-empty strings. A record whose
 `parentId` names nothing becomes a root. When this property holds anything at
 all, the control renders it and makes **no query** — it exists for PCFHub's
 demo and for previewing the layout, and belongs blank on a real form.

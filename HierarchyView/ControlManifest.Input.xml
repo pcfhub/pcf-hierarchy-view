@@ -7,7 +7,7 @@
   -->
   <control namespace="PCFHub"
            constructor="HierarchyView"
-           version="0.1.1"
+           version="0.1.2"
            display-name-key="HierarchyView_Name"
            description-key="HierarchyView_Desc"
            control-type="virtual">

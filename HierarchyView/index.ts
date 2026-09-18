@@ -59,10 +59,23 @@ export class HierarchyView implements ComponentFramework.ReactControl<IInputs, I
             const sample = parseSampleData(sampleRaw);
 
             if (sample.ok) {
+                /*
+                 * The sample's records carry their own details, so
+                 * `detailColumns` cannot choose *which* — but it still decides
+                 * *whether*: blank means names only, as it does on a form. The
+                 * hub's demo found the gap: a "Names only" preset switched onto
+                 * a mounted control changed nothing, because the details came
+                 * from the sample regardless and the key did not carry them.
+                 */
+                const withDetails = (inputs.detailColumns?.raw ?? '').trim() !== '';
+                const tree = withDetails
+                    ? sample.tree
+                    : { ...sample.tree, nodes: sample.tree.nodes.map((node) => ({ ...node, details: [] })) };
+
                 mode = 'sample';
-                currentId = sample.tree.currentId;
-                key = `sample|${initialDepth}|${sampleRaw}`;
-                resolve = this.memo(key, () => Promise.resolve(createSampleSource(sample.tree)));
+                currentId = tree.currentId;
+                key = `sample|${initialDepth}|${withDetails ? 'details' : 'names'}|${sampleRaw}`;
+                resolve = this.memo(key, () => Promise.resolve(createSampleSource(tree)));
             } else {
                 mode = 'bad-sample';
                 key = mode;

@@ -669,6 +669,11 @@ check('hidden is honoured', mount({ ...LOOKUP, visible: false }).props().visible
 const sampled = mount({ webAPI: false, inputs: { sampleData: sampleJson } });
 check('sample data wins over everything the host lacks, and names its own current record', sampled.props().mode === 'sample' && sampled.props().currentId === 'c1');
 check('unreadable sample data is its own state', mount({ inputs: { sampleData: '{not json' } }).props().mode === 'bad-sample');
+check(
+    "sample data with blank detail columns is names only, and the key says so — the hub's Names only preset",
+    mount({ webAPI: false, inputs: { sampleData: sampleJson, detailColumns: '' } }).props().sourceKey.includes('|names|')
+        && mount({ webAPI: false, inputs: { sampleData: sampleJson, detailColumns: 'City' } }).props().sourceKey.includes('|details|'),
+);
 
 /* -------------------------------------------- the routes, through the bundle */
 
@@ -679,6 +684,14 @@ async function routes() {
     check('… OData when the metadata read is refused', (await mount({ ...LOOKUP, relationshipsStatus: 403 }).props().resolve()).route === 'odata');
     check('… OData when there is no client URL to read metadata from', (await mount({ ...LOOKUP, page: false }).props().resolve()).route === 'odata');
     check('… and the sample source for sample data', (await sampled.props().resolve()).route === 'sample');
+
+    const namesOnly = await (await mount({ webAPI: false, inputs: { sampleData: sampleJson, detailColumns: '' } }).props().resolve()).loadChain();
+    const withDetails = await (await mount({ webAPI: false, inputs: { sampleData: sampleJson, detailColumns: 'City' } }).props().resolve()).loadChain();
+    check(
+        'the sample keeps its details only while detail columns is non-blank',
+        namesOnly.every((n) => n.details.length === 0) && withDetails.some((n) => n.details.length > 0),
+        JSON.stringify([namesOnly.map((n) => n.details.length), withDetails.map((n) => n.details.length)]),
+    );
 
     const detailed = mount({ ...LOOKUP, inputs: { detailColumns: 'address1_city, name, revenue' } });
     const source = await detailed.props().resolve();
