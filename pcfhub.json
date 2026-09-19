@@ -4,6 +4,7 @@
   "name": "Hierarchy View",
   "tagline": "A record's place in its hierarchy — ancestors above, children below — from its parent lookup.",
   "category": "visualisation",
+  "hosts": ["model-driven"],
   "tags": [
     "react",
     "hierarchy",
@@ -12,7 +13,6 @@
     "lookup",
     "parent",
     "dataverse",
-    "model-driven",
     "read-only",
     "accessible"
   ],
