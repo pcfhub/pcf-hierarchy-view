@@ -58,11 +58,3 @@ User form:
 
 The tree reads as an org chart down from the top of the reporting line to the
 user's direct reports, each with their title and business unit.
-
-## Previewing the layout without data
-
-**Sample data (demo only)** takes a JSON tree and renders it instead of
-querying — the shape is in the [API reference](api.md). It is what PCFHub's
-demo uses, and it lets a maker see the control on a form before the data
-exists. Clear it before publishing: while it holds anything, the control shows
-that and nothing else.

@@ -7,7 +7,7 @@
   -->
   <control namespace="PCFHub"
            constructor="HierarchyView"
-           version="0.1.2"
+           version="0.2.0"
            display-name-key="HierarchyView_Name"
            description-key="HierarchyView_Desc"
            control-type="virtual">
@@ -103,24 +103,6 @@
               usage="input"
               required="false"
               default-value="50" />
-
-    <!--
-      A JSON tree the control renders INSTEAD of querying Dataverse. It exists
-      for PCFHub's demo, whose harness has no Web API, and for a maker who
-      wants to see the layout before binding it. Leave it blank on a real form:
-      when set, the control never queries, whatever the record holds.
-
-          { "current": "c1",
-            "records": [ { "id": "r1", "name": "Contoso", "parentId": null },
-                         { "id": "c1", "name": "Contoso West", "parentId": "r1",
-                           "details": { "City": "Seattle" }, "childCount": 2 } ] }
-    -->
-    <property name="sampleData"
-              display-name-key="sampleData_Name"
-              description-key="sampleData_Desc"
-              of-type="Multiple"
-              usage="input"
-              required="false" />
 
     <resources>
       <code path="index.ts" order="1" />

@@ -116,13 +116,43 @@ Both routes pass `maxChildren` as `maxPageSize` and stop there.
 
 ## Demo
 
-`mocked`. The control's whole content comes from `context.webAPI`, which the
-hub's harness does not supply, so a demo that ran the control as-is would show
-its *not available on this host* state and nothing else. `sampleData` exists
-for this: a JSON tree the control renders instead of querying, documented as
-demo-only, and each preset carries one. What the demo cannot show: a card click
-(`openForm` has no form to open there), which of the two routes a real form
-would take, and formatted values (the preset's are literal strings).
+**`mocked`, on the control's real code since 0.2.0 — and it needs pcfhub #35
+deployed first** (`dataverse.boundColumns`, and a `$select` fix). Until then
+this `pcfhub.json` and `demo/accounts.json` must not reach the default branch:
+the live hub would query `_value_value` and draw one node.
+
+Through 0.1.2 the demo ran on `sampleData`, a JSON tree the control drew
+instead of querying: a demo-only property in every maker's panel, and a demo
+that exercised none of the code a form runs. 0.2.0 removes it (the route, the
+parser, the `bad-sample` state and three strings per language) and ships
+`demo/accounts.json`, a `dataverse`-only fixture for the hub's stand-in
+Dataverse: twelve accounts in one tree, the form record on Contoso Deutschland
+GmbH, the self-referential `parentaccountid` relationship, and
+`lookupTargets`/`boundColumns` so an empty lookup still names its table and the
+bound property names its real column.
+
+The control takes the **fallback route** there, exactly as on a lookup nobody
+marked hierarchical: the stand-in reports `IsHierarchical: false` and answers no
+FetchXML. So the demo walks up with `retrieveRecord`, asks for children with an
+OData `$filter`, and draws no child-count badge on a node until it is opened.
+
+Watched 2026-09-24 in the hub's harness (`npm run dev:demo-harness` on the #35
+branch, this bundle served locally): the chain Contoso Holdings → Contoso
+Europe → *This record* with its three branches and their details; expanding
+Contoso Berlin loads its two; *A long branch* shows "Showing the first 1." and
+Show all children on the ancestors.
+
+**What running it found, in the hub rather than here:** the stand-in answered
+`$select=parentaccountid` with `parentaccountid: null` instead of
+`_parentaccountid_value`, so every row read through `$select` lost its parent
+and the walk stopped at Contoso Europe. Fixed in #35. The control was right —
+the real Web API does rename a selected lookup — which is the kind of thing only
+running the real code against a stand-in could find.
+
+What it cannot show, and `demo.limitations` says so: the FetchXML route and its
+counts, a different record per preset (one fixture, one form record — the top
+and a leaf are in the screenshots), a card click, and the platform's own
+formatted values.
 
 ## Not verified
 

@@ -71,7 +71,6 @@ relationship per table.
 | Detail columns | *(none)* | Comma-separated logical names, up to three. Anything that is not a logical name is dropped. |
 | Levels open at start | `1` | `0` shows this record's children collapsed; `1` shows them; deeper levels cost one query per node. Capped at 5. |
 | Children per node | `50` | The page size per node. A node with more says *Showing the first N*. Between 1 and 250. |
-| Sample data (demo only) | *(blank)* | Leave blank on a real form. When set, the control renders this JSON tree and queries nothing — see [Examples](examples.md). |
 
 ## Unsaved records
 

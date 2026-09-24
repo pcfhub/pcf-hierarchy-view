@@ -122,7 +122,6 @@
                 detailColumns: document.getElementById('harness-details').value,
                 initialDepth: Number(document.getElementById('harness-depth').value),
                 maxChildren: Number(document.getElementById('harness-maxchildren').value),
-                sampleData: document.getElementById('harness-sample').value,
             },
         };
     }

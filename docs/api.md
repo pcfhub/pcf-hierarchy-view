@@ -41,26 +41,3 @@ lookup as the related record's name.
 **Levels open at start** is clamped to 0–5. **Children per node** is clamped to
 1–250 and is the page size of every children query; a node with more children
 than that shows the first page and says so.
-
-**Sample data (demo only)** is a JSON object:
-
-```json
-{
-  "current": "c1",
-  "records": [
-    { "id": "r1", "name": "Contoso Holdings", "parentId": null, "childCount": 1 },
-    { "id": "c1", "name": "Contoso Europe", "parentId": "r1",
-      "details": { "City": "Amsterdam", "Revenue": "$340,000,000.00" }, "childCount": 2 },
-    { "id": "k1", "name": "Contoso Deutschland GmbH", "parentId": "c1" }
-  ]
-}
-```
-
-`current` names the record the tree is drawn around; `parentId` is another
-record's `id` or `null`; `details` is up to three label → text pairs shown
-as typed — and shown only while **Detail columns** is non-blank, so the same
-sample can be seen with and without them; `childCount` is optional and
-decides whether a chevron is drawn before the node is opened. Ids are any non-empty strings. A record whose
-`parentId` names nothing becomes a root. When this property holds anything at
-all, the control renders it and makes **no query** — it exists for PCFHub's
-demo and for previewing the layout, and belongs blank on a real form.

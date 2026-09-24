@@ -79,7 +79,6 @@
         HierarchyView_Open: "Open {0}",
         HierarchyView_LoadFailed: "The hierarchy could not be read: {0}",
         HierarchyView_Truncated: "Showing the first {0}.",
-        HierarchyView_BadSample: "The sample data could not be read.",
         HierarchyView_Retry: "Try again",
         HierarchyView_ShowAll: "Show all children",
         HierarchyView_NotFound: "This record could not be found in its table.",

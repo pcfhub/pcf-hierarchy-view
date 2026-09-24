@@ -106,12 +106,6 @@
     <value>Cuántos registros hijos se cargan bajo un nodo. Un nodo con más lo indica.</value>
   </data>
 
-  <data name="sampleData_Name" xml:space="preserve">
-    <value>Datos de ejemplo (solo demo)</value>
-  </data>
-  <data name="sampleData_Desc" xml:space="preserve">
-    <value>Un árbol JSON que el control muestra en lugar de consultar Dataverse. Para la demo de PCFHub y para previsualizar el diseño; déjelo en blanco en un formulario real.</value>
-  </data>
 
   <data name="HierarchyView_NoAccess" xml:space="preserve">
     <value>No tiene acceso a este valor.</value>
@@ -151,9 +145,6 @@
   </data>
   <data name="HierarchyView_Truncated" xml:space="preserve">
     <value>Mostrando los primeros {0}.</value>
-  </data>
-  <data name="HierarchyView_BadSample" xml:space="preserve">
-    <value>No se pudieron leer los datos de ejemplo.</value>
   </data>
   <data name="HierarchyView_Retry" xml:space="preserve">
     <value>Reintentar</value>

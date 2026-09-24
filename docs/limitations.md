@@ -39,9 +39,6 @@ Each of these is a constraint that was chosen, not a defect waiting on a fix.
   four levels still fit a phone; nothing is hidden. The measurement is the
   control's own width, not the browser's — a narrow form column on a desktop
   does the same.
-- **Sample data is for the demo.** While *Sample data (demo only)* holds
-  anything, the control renders it and never queries. It is documented as
-  such, defaults to blank, and belongs blank on a real form.
 - **Not yet measured on the phone client or Power Pages.** The web client is
   where every claim above was checked; the phone layout renders in the
   harness and has not been opened on a device.

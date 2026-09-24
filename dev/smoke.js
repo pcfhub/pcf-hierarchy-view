@@ -299,12 +299,12 @@ if (typeof registration.ctor !== 'function') {
 /* ======================================================================== *
  *  HIERARCHY VIEW — what the control decides, asserted two ways.
  *
- *  The **pure modules** (`query/`, `tree/`, `sample/`, `data/`, `platform.ts`)
+ *  The **pure modules** (`query/`, `tree/`, `data/`, `platform.ts`)
  *  are transpiled straight from source and driven directly: the exact FetchXML
  *  a server would receive, the chain put in order, every reducer transition,
  *  the two live sources against the rig's Web API. The **bundle** is mounted
  *  through `mount()` and read through the props it hands the component, which
- *  are its decisions about the host: which of the seven modes, which route,
+ *  are its decisions about the host: which of the five modes, which route,
  *  what key the tree is built from.
  *
  *  What neither can prove: that a real form's `retrieveMultipleRecords` takes
@@ -390,7 +390,6 @@ const Q = load('query/fetchXml');
 const R = load('query/records');
 const C = load('query/chain');
 const T = load('tree/reducer');
-const S = load('sample/parseSampleData');
 const D = load('data/HierarchyData');
 const P = load('platform');
 
@@ -536,40 +535,9 @@ check('initialDepth 2 opens the children as they land', T.pendingLoads(deep).inc
 check('initialDepth 0 shows the current record closed', T.pendingLoads(T.reduce(T.initialState('c1'), { type: 'chainLoaded', chain: [mk('c1', null)], initialDepth: 0 })).length === 0);
 check('an empty chain is not-found', T.reduce(T.initialState('c1'), { type: 'chainLoaded', chain: [], initialDepth: 1 }).error === 'not-found');
 
-/* ------------------------------------------------------------ sample data */
-
-const sampleJson = JSON.stringify({
-    current: 'c1',
-    records: [
-        { id: 'r1', name: 'Contoso', parentId: null },
-        { id: 'c1', name: 'Contoso West', parentId: 'r1', details: { City: 'Seattle', Owner: 'Ana' }, childCount: 2 },
-        { id: 'k1', name: 'Kid', parentId: 'c1' },
-        { id: 'k2', name: 'Kid 2', parentId: 'c1', childCount: -3 },
-        { id: 'orphan', name: 'Orphan', parentId: 'nobody' },
-        { name: 'no id' },
-        { id: 'c1', name: 'duplicate' },
-    ],
-});
-const sample = S.parseSampleData(sampleJson);
-
-check(
-    'sample data: records kept once each, an unknown parent makes a root, a bad count is null, details capped',
-    sample.ok && sample.tree.currentId === 'c1' && sample.tree.nodes.length === 5
-        && sample.tree.nodes.find((n) => n.id === 'orphan').parentId === null
-        && sample.tree.nodes.find((n) => n.id === 'k2').childCount === null
-        && sample.tree.nodes.find((n) => n.id === 'c1').details.length === 2,
-    JSON.stringify(sample),
-);
-check('bad JSON, no records, or a blank string is not sample data', !S.parseSampleData('nope').ok && !S.parseSampleData('{}').ok && !S.parseSampleData('  ').ok);
-check('a current that names no record falls back to the first', S.parseSampleData('{"current":"zz","records":[{"id":"a","name":"A"}]}').tree.currentId === 'a');
-
-/* --------------------------------------------- the three sources, live */
+/* ----------------------------------------------- the two sources, live */
 
 async function sources() {
-    const sampleSource = D.createSampleSource(sample.tree);
-    const chain = await sampleSource.loadChain();
-    check('the sample source answers the chain and children from the parsed tree', chain.map((n) => n.id).join(',') === 'r1,c1' && (await sampleSource.loadChildren('c1')).children.length === 2);
-
     const calls = [];
     const ctx = host.createContext({ fixture, calls, clientUrl: host.nextClientUrl() });
     const live = { webAPI: ctx.webAPI, q: { ...q, details: ['address1_city', 'revenue'] }, recordId: 'c1', parentId: 'p1', maxChildren: 50 };
@@ -666,13 +634,16 @@ check('a column the user cannot read is no-access, before anything else', mount(
 check('a host with no openForm gets cards that do not open', mount({ ...LOOKUP, openForm: 'absent' }).props().openRecord === null);
 check('hidden is honoured', mount({ ...LOOKUP, visible: false }).props().visible === false);
 
-const sampled = mount({ webAPI: false, inputs: { sampleData: sampleJson } });
-check('sample data wins over everything the host lacks, and names its own current record', sampled.props().mode === 'sample' && sampled.props().currentId === 'c1');
-check('unreadable sample data is its own state', mount({ inputs: { sampleData: '{not json' } }).props().mode === 'bad-sample');
+/*
+ * Blank detail columns is names only, and the key has to say so: the hub's
+ * "Names only" preset is switched onto a mounted control, and a key that
+ * ignored the details would leave the old cards on screen. Found in 0.1.2 on
+ * the sample route; asserted here on the live one it now runs on.
+ */
 check(
-    "sample data with blank detail columns is names only, and the key says so — the hub's Names only preset",
-    mount({ webAPI: false, inputs: { sampleData: sampleJson, detailColumns: '' } }).props().sourceKey.includes('|names|')
-        && mount({ webAPI: false, inputs: { sampleData: sampleJson, detailColumns: 'City' } }).props().sourceKey.includes('|details|'),
+    'blank detail columns changes the key, so a preset switched to names only rebuilds the tree',
+    mount({ ...LOOKUP, inputs: { detailColumns: '' } }).props().sourceKey
+        !== mount({ ...LOOKUP, inputs: { detailColumns: 'address1_city' } }).props().sourceKey,
 );
 
 /* -------------------------------------------- the routes, through the bundle */
@@ -683,13 +654,12 @@ async function routes() {
     check('… OData when the relationship is not hierarchical', (await mount({ ...LOOKUP, hierarchical: false }).props().resolve()).route === 'odata');
     check('… OData when the metadata read is refused', (await mount({ ...LOOKUP, relationshipsStatus: 403 }).props().resolve()).route === 'odata');
     check('… OData when there is no client URL to read metadata from', (await mount({ ...LOOKUP, page: false }).props().resolve()).route === 'odata');
-    check('… and the sample source for sample data', (await sampled.props().resolve()).route === 'sample');
 
-    const namesOnly = await (await mount({ webAPI: false, inputs: { sampleData: sampleJson, detailColumns: '' } }).props().resolve()).loadChain();
-    const withDetails = await (await mount({ webAPI: false, inputs: { sampleData: sampleJson, detailColumns: 'City' } }).props().resolve()).loadChain();
+    const namesOnly = (await (await mount({ ...LOOKUP, inputs: { detailColumns: '' } }).props().resolve()).loadChildren('c1')).children;
+    const withDetails = (await (await mount({ ...LOOKUP, inputs: { detailColumns: 'address1_city' } }).props().resolve()).loadChildren('c1')).children;
     check(
-        'the sample keeps its details only while detail columns is non-blank',
-        namesOnly.every((n) => n.details.length === 0) && withDetails.some((n) => n.details.length > 0),
+        'the cards carry details only while detail columns is non-blank',
+        namesOnly.length > 0 && namesOnly.every((n) => n.details.length === 0) && withDetails.some((n) => n.details.length > 0),
         JSON.stringify([namesOnly.map((n) => n.details.length), withDetails.map((n) => n.details.length)]),
     );
 

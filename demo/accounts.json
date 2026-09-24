@@ -1,0 +1,142 @@
+{
+    "dataverse": {
+        "record": {
+            "entityType": "account",
+            "id": "acc00000-0000-4000-8000-000000000005",
+            "name": "Contoso Deutschland GmbH"
+        },
+        "tables": {
+            "account": {
+                "entitySet": "accounts",
+                "primaryId": "accountid",
+                "primaryName": "name",
+                "rows": [
+                    {
+                        "id": "acc00000-0000-4000-8000-000000000001",
+                        "values": {
+                            "name": "Contoso Holdings",
+                            "_parentaccountid_value": null,
+                            "address1_city": "Redmond",
+                            "revenue": "$1,200,000,000.00"
+                        }
+                    },
+                    {
+                        "id": "acc00000-0000-4000-8000-000000000002",
+                        "values": {
+                            "name": "Contoso Europe",
+                            "_parentaccountid_value": "acc00000-0000-4000-8000-000000000001",
+                            "address1_city": "Amsterdam",
+                            "revenue": "$340,000,000.00"
+                        }
+                    },
+                    {
+                        "id": "acc00000-0000-4000-8000-000000000003",
+                        "values": {
+                            "name": "Contoso Americas",
+                            "_parentaccountid_value": "acc00000-0000-4000-8000-000000000001",
+                            "address1_city": "Seattle",
+                            "revenue": "$510,000,000.00"
+                        }
+                    },
+                    {
+                        "id": "acc00000-0000-4000-8000-000000000004",
+                        "values": {
+                            "name": "Contoso Canada",
+                            "_parentaccountid_value": "acc00000-0000-4000-8000-000000000003",
+                            "address1_city": "Toronto",
+                            "revenue": "$64,000,000.00"
+                        }
+                    },
+                    {
+                        "id": "acc00000-0000-4000-8000-000000000005",
+                        "values": {
+                            "name": "Contoso Deutschland GmbH",
+                            "_parentaccountid_value": "acc00000-0000-4000-8000-000000000002",
+                            "address1_city": "Frankfurt",
+                            "revenue": "$120,000,000.00"
+                        }
+                    },
+                    {
+                        "id": "acc00000-0000-4000-8000-000000000006",
+                        "values": {
+                            "name": "Contoso France SARL",
+                            "_parentaccountid_value": "acc00000-0000-4000-8000-000000000002",
+                            "address1_city": "Paris",
+                            "revenue": "$98,000,000.00"
+                        }
+                    },
+                    {
+                        "id": "acc00000-0000-4000-8000-000000000007",
+                        "values": {
+                            "name": "Contoso Nederland B.V.",
+                            "_parentaccountid_value": "acc00000-0000-4000-8000-000000000002",
+                            "address1_city": "Utrecht",
+                            "revenue": "$41,000,000.00"
+                        }
+                    },
+                    {
+                        "id": "acc00000-0000-4000-8000-000000000008",
+                        "values": {
+                            "name": "Contoso Berlin",
+                            "_parentaccountid_value": "acc00000-0000-4000-8000-000000000005",
+                            "address1_city": "Berlin",
+                            "revenue": "$15,000,000.00"
+                        }
+                    },
+                    {
+                        "id": "acc00000-0000-4000-8000-000000000009",
+                        "values": {
+                            "name": "Contoso München — Niederlassung Süd, Vertrieb und Service",
+                            "_parentaccountid_value": "acc00000-0000-4000-8000-000000000005",
+                            "address1_city": null,
+                            "revenue": null
+                        }
+                    },
+                    {
+                        "id": "acc00000-0000-4000-8000-000000000010",
+                        "values": {
+                            "name": "Contoso Hamburg",
+                            "_parentaccountid_value": "acc00000-0000-4000-8000-000000000005",
+                            "address1_city": "Hamburg",
+                            "revenue": "$9,800,000.00"
+                        }
+                    },
+                    {
+                        "id": "acc00000-0000-4000-8000-000000000011",
+                        "values": {
+                            "name": "Contoso Berlin Mitte",
+                            "_parentaccountid_value": "acc00000-0000-4000-8000-000000000008",
+                            "address1_city": "Berlin",
+                            "revenue": "$2,100,000.00"
+                        }
+                    },
+                    {
+                        "id": "acc00000-0000-4000-8000-000000000012",
+                        "values": {
+                            "name": "Contoso Berlin Spandau",
+                            "_parentaccountid_value": "acc00000-0000-4000-8000-000000000008",
+                            "address1_city": "Berlin",
+                            "revenue": "$1,400,000.00"
+                        }
+                    }
+                ]
+            }
+        },
+        "relationships": [
+            {
+                "kind": "oneToMany",
+                "schemaName": "account_parent_account",
+                "referencedEntity": "account",
+                "referencingEntity": "account",
+                "referencingAttribute": "parentaccountid",
+                "referencingNavigationProperty": "parentaccountid"
+            }
+        ],
+        "lookupTargets": {
+            "value": "account"
+        },
+        "boundColumns": {
+            "value": "parentaccountid"
+        }
+    }
+}

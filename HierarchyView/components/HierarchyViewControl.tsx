@@ -21,27 +21,26 @@ export interface Strings {
     /** `{0}` is the platform's message. */
     loadFailed: string;
     current: string;
-    badSample: string;
     retry: string;
     showAll: string;
     notFound: string;
 }
 
 /** What the control has decided about the host, before any query runs. */
-export type Mode = 'live' | 'sample' | 'not-available' | 'save-first' | 'not-a-lookup' | 'no-access' | 'bad-sample';
+export type Mode = 'live' | 'not-available' | 'save-first' | 'not-a-lookup' | 'no-access';
 
 export interface IProps {
     mode: Mode;
     /**
      * Where nodes come from, resolved lazily because the live route has to
-     * ask the metadata two questions first. `null` in every mode but `live`
-     * and `sample`.
+     * ask the metadata two questions first. `null` in every mode but
+     * `live`.
      */
     resolve: (() => Promise<HierarchySource>) | null;
     /**
      * Changes whenever anything the tree was built from changes — the record,
-     * the target, the column, the detail columns, the depth, the page size,
-     * the sample — and the tree starts over. This is how an input changed
+     * the target, the column, the detail columns, the depth, the page size —
+     * and the tree starts over. This is how an input changed
      * after `init` (the hub's preset switch) reaches the component.
      */
     sourceKey: string;
@@ -110,7 +109,7 @@ export function HierarchyViewControl(props: IProps): React.ReactElement | null {
         source.current = null;
         inflight.current.clear();
 
-        if (!resolve || (mode !== 'live' && mode !== 'sample')) {
+        if (!resolve || mode !== 'live') {
             return undefined;
         }
 
@@ -231,7 +230,6 @@ export function HierarchyViewControl(props: IProps): React.ReactElement | null {
         case 'not-available': body = message(strings.notAvailable); break;
         case 'save-first': body = message(strings.saveFirst); break;
         case 'not-a-lookup': body = message(strings.notALookup); break;
-        case 'bad-sample': body = message(strings.badSample, 'alert'); break;
         default:
             if (!state.ready) {
                 body = (

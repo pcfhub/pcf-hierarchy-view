@@ -1,11 +1,10 @@
 import * as React from 'react';
 import { IInputs, IOutputs } from './generated/ManifestTypes';
 import { HierarchyViewControl, IProps, Mode, Strings } from './components/HierarchyViewControl';
-import { createFetchXmlSource, createODataSource, createSampleSource, HierarchySource } from './data/HierarchyData';
+import { createFetchXmlSource, createODataSource, HierarchySource } from './data/HierarchyData';
 import { isHierarchical, readHost } from './platform';
 import { parseDetailColumns } from './query/fetchXml';
 import { QueryShape } from './query/types';
-import { parseSampleData } from './sample/parseSampleData';
 
 /** What `initialDepth` and `maxChildren` are clamped to: a form is not a place to load a whole tree. */
 const DEPTH_MAX = 5;
@@ -42,44 +41,17 @@ export class HierarchyView implements ComponentFramework.ReactControl<IInputs, I
         const inputs = context.parameters;
         const initialDepth = clamp(inputs.initialDepth?.raw, 1, 0, DEPTH_MAX);
         const maxChildren = clamp(inputs.maxChildren?.raw, 50, CHILDREN_MIN, CHILDREN_MAX);
-        const sampleRaw = inputs.sampleData?.raw ?? '';
         const details = parseDetailColumns(inputs.detailColumns?.raw, [host.column]);
         const strings = this.strings(context);
 
         let mode: Mode;
-        let currentId = host.recordId ?? '';
+        const currentId = host.recordId ?? '';
         let resolve: (() => Promise<HierarchySource>) | null = null;
         let key: string;
 
         if (!host.readable) {
             mode = 'no-access';
             key = mode;
-        } else if (sampleRaw.trim() !== '') {
-            // The demo route: a tree the maker typed, and no query at all.
-            const sample = parseSampleData(sampleRaw);
-
-            if (sample.ok) {
-                /*
-                 * The sample's records carry their own details, so
-                 * `detailColumns` cannot choose *which* — but it still decides
-                 * *whether*: blank means names only, as it does on a form. The
-                 * hub's demo found the gap: a "Names only" preset switched onto
-                 * a mounted control changed nothing, because the details came
-                 * from the sample regardless and the key did not carry them.
-                 */
-                const withDetails = (inputs.detailColumns?.raw ?? '').trim() !== '';
-                const tree = withDetails
-                    ? sample.tree
-                    : { ...sample.tree, nodes: sample.tree.nodes.map((node) => ({ ...node, details: [] })) };
-
-                mode = 'sample';
-                currentId = tree.currentId;
-                key = `sample|${initialDepth}|${withDetails ? 'details' : 'names'}|${sampleRaw}`;
-                resolve = this.memo(key, () => Promise.resolve(createSampleSource(tree)));
-            } else {
-                mode = 'bad-sample';
-                key = mode;
-            }
         } else if (host.webAPI === null) {
             mode = 'not-available';
             key = mode;
@@ -176,7 +148,6 @@ export class HierarchyView implements ComponentFramework.ReactControl<IInputs, I
             truncated: s('Truncated'),
             loadFailed: s('LoadFailed'),
             current: s('Current'),
-            badSample: s('BadSample'),
             retry: s('Retry'),
             showAll: s('ShowAll'),
             notFound: s('NotFound'),

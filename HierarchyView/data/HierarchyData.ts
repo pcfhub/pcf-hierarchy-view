@@ -13,7 +13,6 @@ import { orderChain } from '../query/chain';
 import { ancestorsFetchXml, childrenFetchXml, childrenOData, queryString, recordSelect } from '../query/fetchXml';
 import { Row, toNode, toNodes } from '../query/records';
 import { Node, QueryShape, Route } from '../query/types';
-import { SampleTree } from '../sample/parseSampleData';
 
 export interface QueryResult {
     entities: Row[];
@@ -67,20 +66,6 @@ function page(nodes: Node[], result: QueryResult, max: number): ChildrenResult {
     const more = Boolean(result.nextLink) || Boolean(result.fetchXmlPagingCookie) || nodes.length > max;
 
     return { children: nodes.slice(0, max), truncated: more };
-}
-
-export function createSampleSource(tree: SampleTree): HierarchySource {
-    const byId = new Map(tree.nodes.map((node) => [node.id, node] as const));
-
-    return {
-        route: 'sample',
-        loadChain: () => Promise.resolve(orderChain(tree.nodes, tree.currentId)),
-        loadChildren: (id) =>
-            Promise.resolve({
-                children: tree.nodes.filter((node) => node.parentId === id && byId.has(node.id)),
-                truncated: false,
-            }),
-    };
 }
 
 export interface LiveOptions {

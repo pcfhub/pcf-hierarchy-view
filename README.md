@@ -45,7 +45,6 @@ come a page at a time per node, by name.
 | `detailColumns` | SingleLine.Text | input | — | Comma-separated logical names shown under each record, three at most; formatted values. |
 | `initialDepth` | Whole.None | input | `1` | Levels below the record open on first render, 0–5. |
 | `maxChildren` | Whole.None | input | `50` | Children loaded per node (the query's page size), 1–250. |
-| `sampleData` | Multiple | input | — | A JSON tree rendered instead of querying — for the hub's demo. Blank on a real form. |
 
 A React (virtual) control on the platform's React 16.14 and Fluent UI 9.46;
 neither is bundled. Strings ship in English, German, French, Japanese and
@@ -56,15 +55,21 @@ feature gates.
 
 ## On the hub
 
-`demo.fidelity` is **mocked**. The control's whole content comes from
-`context.webAPI`, which the hub's harness does not supply, so a demo that ran
-the control as-is would show its *not available on this host* state and nothing
-else. `sampleData` exists for this: a JSON tree the control renders instead of
-querying, documented as demo-only, and every preset carries one — a record in
-the middle, the top of the tree, a leaf, three levels open, names only — plus a
-preset with no sample that shows the honest empty state. What the demo cannot
-show: a card click (`openForm` has no form to open there), which of the two
-routes a real form would take, and the platform's own formatted values.
+`demo.fidelity` is **mocked**, and since 0.2.0 the demo runs the control's
+real code. `demo/accounts.json` is a stand-in Dataverse the hub's harness
+answers from (the hub's `docs/demo-harness-dataverse.md`): an account tree, the
+record the form is on, and the self-referential `parentaccountid` lookup. The
+control reads the record, walks up through `retrieveRecord`, and asks for each
+node's children with an OData `$filter`, exactly as on a form. Until 0.1.2 the
+demo ran on a `sampleData` input instead, a demo-only property in every
+maker's panel; it is gone.
+
+What the demo cannot show: the FetchXML route and its child counts (the
+stand-in reports no hierarchical relationships and answers no FetchXML), a
+different form record per preset (one fixture, one record, so the top of the
+tree and a leaf are in the screenshots), a card click (`openForm` has no form to
+open there), and the platform's own formatted values (the fixture's text is
+shown as given).
 
 ## Install
 

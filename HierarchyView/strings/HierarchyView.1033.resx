@@ -103,12 +103,6 @@
     <value>How many child records are loaded under one node. A node with more says so.</value>
   </data>
 
-  <data name="sampleData_Name" xml:space="preserve">
-    <value>Sample data (demo only)</value>
-  </data>
-  <data name="sampleData_Desc" xml:space="preserve">
-    <value>A JSON tree the control shows instead of querying Dataverse. For PCFHub's demo and for previewing the layout; leave blank on a real form.</value>
-  </data>
 
   <!--
     Runtime strings, read with context.resources.getString(). Anything the user
@@ -154,9 +148,6 @@
   </data>
   <data name="HierarchyView_Truncated" xml:space="preserve">
     <value>Showing the first {0}.</value>
-  </data>
-  <data name="HierarchyView_BadSample" xml:space="preserve">
-    <value>The sample data could not be read.</value>
   </data>
   <data name="HierarchyView_Retry" xml:space="preserve">
     <value>Try again</value>

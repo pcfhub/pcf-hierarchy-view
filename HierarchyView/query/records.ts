@@ -42,7 +42,7 @@ export const parentIdOf = (row: Row, column: string): string | null => bareId(ro
 
 /**
  * The `CountChildren` aggregate, or `null` when the row has none — the
- * fallback route asks for none, and sample data may omit it. Read leniently:
+ * fallback route asks for none. Read leniently:
  * the probe decides whether the server sends a number or a string (P3).
  */
 export function childCount(row: Row): number | null {

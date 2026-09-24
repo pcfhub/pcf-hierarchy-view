@@ -28,10 +28,10 @@ export interface Node {
     details: { column: string; text: string }[];
     /**
      * How many children the server says this node has, or `null` when the
-     * route cannot know — the fallback route, and sample data that omits it.
+     * route cannot know — the fallback route.
      */
     childCount: number | null;
 }
 
 /** Which of the three ways the tree is being read. */
-export type Route = 'sample' | 'fetchxml' | 'odata';
+export type Route = 'fetchxml' | 'odata';

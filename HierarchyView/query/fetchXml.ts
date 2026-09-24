@@ -21,7 +21,7 @@ export const isLogicalName = (value: string): boolean => /^[a-z][a-z0-9_]*$/.tes
  * non-string or an empty one. The platform hands ids down in three spellings
  * (`{UPPER}`, `lower`, `UPPER`), and a query built from the wrong one
  * matches nothing without saying so. Lenient about the shape on purpose: the
- * rig's fixture and a maker's sample data use short ids, and only
+ * rig's fixture uses short ids, and only
  * `contextInfo` needs the strict reading below.
  */
 export function bareId(value: unknown): string | null {

@@ -35,7 +35,6 @@
     ?details=a,b           detail columns (default address1_city, revenue)
     ?depth=2               levels open at start
     ?max=1                 children per node
-    ?sample=<json>         sample data instead of a query
     ?expand=k1,g1          click those nodes' chevrons after the tree loads
     ?showall=p1            press Show all children on that ancestor
     ?dark=1  ?rtl=1        theme and direction
@@ -131,7 +130,6 @@
                 detailColumns: params.has('details') ? params.get('details') : 'address1_city, revenue',
                 initialDepth: params.has('depth') ? Number(params.get('depth')) : 1,
                 maxChildren: params.has('max') ? Number(params.get('max')) : 50,
-                sampleData: params.get('sample') || '',
             },
         };
 
