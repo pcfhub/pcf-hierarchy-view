@@ -5,6 +5,8 @@ A record's place in its hierarchy — ancestors above, children below — from i
 [![Build](https://github.com/pcfhub/pcf-hierarchy-view/actions/workflows/build.yml/badge.svg)](https://github.com/pcfhub/pcf-hierarchy-view/actions/workflows/build.yml)
 [![Release](https://github.com/pcfhub/pcf-hierarchy-view/actions/workflows/release.yml/badge.svg)](https://github.com/pcfhub/pcf-hierarchy-view/actions/workflows/release.yml)
 
+[![Try it live on PCFHub](https://pcfhub.dev/badges/try-it-live.svg)](https://pcfhub.dev/components/pcf-hierarchy-view)
+
 Documentation lives on [PCFHub](https://pcfhub.dev/components/pcf-hierarchy-view), built
 from the `docs/` directory in this repository. Edit the Markdown here; the hub
 recompiles it.
