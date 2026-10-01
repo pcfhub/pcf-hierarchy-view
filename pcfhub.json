@@ -3,6 +3,7 @@
   "slug": "pcf-hierarchy-view",
   "name": "Hierarchy View",
   "tagline": "A record's place in its hierarchy — ancestors above, children below — from its parent lookup.",
+  "summary": "Place it on a lookup that points at the record's own table, such as Parent Account or Manager, and it draws the record's place in that hierarchy: every ancestor up to the top, the record itself marked, and its children beneath, expandable one level at a time. Click a name to open that record.\n\n- Configures itself from the lookup it is bound to\n- Works whether or not the relationship was flagged as hierarchical in Dataverse\n\nModel-driven apps only. It stands in for the built-in hierarchy view those apps removed in October 2025.",
   "category": "visualisation",
   "hosts": ["model-driven"],
   "tags": [
