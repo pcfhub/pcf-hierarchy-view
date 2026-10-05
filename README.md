@@ -2,6 +2,8 @@
 
 A record's place in its hierarchy — ancestors above, children below — from its parent lookup.
 
+> **Reference example · built with AI.** This control was written with AI (Claude) and tested on a live Dataverse form; its code has not been reviewed line by line. It is published as a worked example and is not maintained — read the source and [`SPEC.md`](SPEC.md) (what was measured on the form) before you use it. Fixes are not guaranteed.
+
 [![Build](https://github.com/pcfhub/pcf-hierarchy-view/actions/workflows/build.yml/badge.svg)](https://github.com/pcfhub/pcf-hierarchy-view/actions/workflows/build.yml)
 [![Release](https://github.com/pcfhub/pcf-hierarchy-view/actions/workflows/release.yml/badge.svg)](https://github.com/pcfhub/pcf-hierarchy-view/actions/workflows/release.yml)
 
@@ -10,7 +12,6 @@ A record's place in its hierarchy — ancestors above, children below — from i
 Documentation lives on [PCFHub](https://pcfhub.dev/components/pcf-hierarchy-view), built
 from the `docs/` directory in this repository. Edit the Markdown here; the hub
 recompiles it.
-
 
 ## What it does
 

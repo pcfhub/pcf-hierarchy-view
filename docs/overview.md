@@ -8,6 +8,10 @@ order: 1
 
 A record's place in its hierarchy — ancestors above, children below — from its parent lookup.
 
+:::callout{type=warning}
+**Reference example · built with AI.** This control was written with AI (Claude) and tested on a live Dataverse form; its code has not been reviewed line by line. It is published as a worked example and is not maintained — read the source and [SPEC.md](https://github.com/pcfhub/pcf-hierarchy-view/blob/main/SPEC.md) (what was measured on the form) before you use it. Fixes are not guaranteed.
+:::
+
 ::image{src=media/screenshot.png alt="An account form section showing Contoso Holdings at the top, Contoso Europe beneath it, the open record Contoso Deutschland GmbH marked 'This record' with a count of 2, and its two child accounts indented below with their city and revenue" zoom}
 
 Place it on the lookup that points at a record's own table — **Parent Account**
