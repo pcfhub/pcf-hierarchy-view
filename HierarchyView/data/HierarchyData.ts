@@ -1,5 +1,5 @@
 /**
- * Where nodes come from: one interface, three sources. The component asks
+ * Where nodes come from: one interface, two sources. The component asks
  * `loadChain()` once and `loadChildren(id)` per open node, and never knows
  * which route answered — so the routes can be swapped by the tests and by the
  * hub's demo without a branch in the rendering.

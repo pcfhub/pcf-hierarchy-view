@@ -33,5 +33,5 @@ export interface Node {
     childCount: number | null;
 }
 
-/** Which of the three ways the tree is being read. */
+/** Which of the two ways the tree is being read. */
 export type Route = 'fetchxml' | 'odata';
