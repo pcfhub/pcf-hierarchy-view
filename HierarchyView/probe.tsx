@@ -22,7 +22,7 @@ import { IInputs } from './generated/ManifestTypes';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-const TAG = '[hierarchy-view probe 0.2.9]';
+const TAG = '[hierarchy-view probe 0.2.10]';
 const lines: string[] = [];
 const listeners = new Set<() => void>();
 
@@ -86,6 +86,8 @@ export function Probe(props: ProbeProps): React.ReactElement {
     const [, redraw] = React.useState(0);
     const panel = React.useRef<HTMLDivElement>(null);
     const canvasScroller = React.useRef<HTMLDivElement>(null);
+    const allocated = (props.context() as any).mode?.allocatedWidth;
+    const held = typeof allocated === 'number' && allocated > 0 ? allocated : null;
     const [image, setImage] = React.useState<string | null>(null);
     const asked = React.useRef(false);
     const lastAllocated = React.useRef('');
@@ -154,7 +156,9 @@ export function Probe(props: ProbeProps): React.ReactElement {
         const p = c.parameters ?? {};
 
         log(`C5 layout: raw=${short(p.layout?.raw)} type=${short(p.layout?.type)} typeof=${typeof p.layout?.raw}; showImage: raw=${short(p.showImage?.raw)} typeof=${typeof p.showImage?.raw} type=${short(p.showImage?.type)}`);
-        log(`webAPI keys: ${short(c.webAPI ? Object.keys(c.webAPI) : c.webAPI)}; page.getClientUrl=${typeof c.page?.getClientUrl}`);
+        log(`webAPI retrieveRecord=${typeof c.webAPI?.retrieveRecord} retrieveMultipleRecords=${typeof c.webAPI?.retrieveMultipleRecords}; page.getClientUrl=${typeof c.page?.getClientUrl}`);
+        // 0.2.9 set these from an async block before the window object existed, and threw silently.
+        (window as any).__hierarchyProbe = (window as any).__hierarchyProbe ?? {};
 
         window.setTimeout(() => centre('mount + 1 s'), 1000);
 
@@ -293,7 +297,7 @@ export function Probe(props: ProbeProps): React.ReactElement {
     return (
         <div ref={panel} style={{ marginTop: 12, padding: 8, border: '1px dashed #c50f1f', font: '12px/1.4 Consolas, monospace' }}>
             <div style={{ fontWeight: 600 }}>{TAG} — temporary; see SPEC.md. Console: __hierarchyProbe.setup() / actions() / cleanup() / dump()</div>
-            <div ref={canvasScroller} style={{ overflow: 'auto', border: '1px solid #8a8886', marginTop: 6 }}>
+            <div ref={canvasScroller} style={{ overflow: 'auto', border: '1px solid #8a8886', marginTop: 6, boxSizing: 'border-box', width: held === null ? undefined : held - 18, maxWidth: '100%' }}>
                 <div style={{ position: 'relative', width: 2400, height: 90, background: 'repeating-linear-gradient(90deg, #f3f2f1 0 199px, #c8c6c4 199px 200px)' }}>
                     <div style={{ position: 'absolute', left: 1700, top: 20, width: 200, height: 50, background: '#0f6cbd', color: 'white', textAlign: 'center', lineHeight: '50px' }}>C2 target @1800</div>
                 </div>
