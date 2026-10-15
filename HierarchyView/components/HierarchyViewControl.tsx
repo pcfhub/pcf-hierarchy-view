@@ -293,6 +293,25 @@ export function HierarchyViewControl(props: IProps): React.ReactElement | null {
         }
     };
 
+    /*
+     * A press on a row or a card selects it and keeps the keyboard on the
+     * tree. Without the preventDefault, the chevron or Show all under the
+     * pointer takes focus on mousedown — tabIndex -1 still does — and when it
+     * unmounts, as Show all does, focus falls to the page and the arrows stop
+     * (walkthrough on the form, 0.3.0). The tree is focused without scrolling
+     * the form.
+     */
+    const select = (id: string, event?: React.MouseEvent): void => {
+        if (event) {
+            if (event.button !== 0) {
+                return;
+            }
+            event.preventDefault();
+            containerRef.current?.focus({ preventScroll: true });
+        }
+        setFocusId(id);
+    };
+
     // The one tab stop, for either layout: the rows are never focused themselves.
     const containerProps = {
         ref: containerRef,
@@ -352,7 +371,7 @@ export function HierarchyViewControl(props: IProps): React.ReactElement | null {
                         strings={strings}
                         canOpenRecord={props.openRecord !== null}
                         containerProps={containerProps}
-                        onSelect={setFocusId}
+                        onSelect={select}
                         onToggle={(id) => dispatch({ type: 'toggle', id })}
                         onRetry={(id) => dispatch({ type: 'retry', id })}
                         onShowAll={(id) => dispatch({ type: 'showAll', id })}
@@ -373,7 +392,7 @@ export function HierarchyViewControl(props: IProps): React.ReactElement | null {
                                 active={row.node.id === activeId}
                                 position={places[index]}
                                 image={props.showImage ? pictureUrl(row.node.image, props.clientUrl) ?? null : undefined}
-                                onSelect={setFocusId}
+                                onSelect={select}
                                 onToggle={(id) => dispatch({ type: 'toggle', id })}
                                 onRetry={(id) => dispatch({ type: 'retry', id })}
                                 onShowAll={(id) => dispatch({ type: 'showAll', id })}
@@ -404,7 +423,8 @@ export interface RowProps {
     position?: { posInSet: number; setSize: number };
     /** `undefined`: pictures are off. `null`: on, and this record has none — its initials. */
     image?: string | null;
-    onSelect?: (id: string) => void;
+    /** A press on the row: selects it, keeping the keyboard on the tree. */
+    onSelect?: (id: string, event?: React.MouseEvent) => void;
     onToggle: (id: string) => void;
     onRetry: (id: string) => void;
     onShowAll: (id: string) => void;
@@ -446,7 +466,7 @@ export function TreeRow(props: RowProps): React.ReactElement {
             aria-selected={props.active}
             aria-current={row.isCurrent ? 'true' : undefined}
             style={{ '--HierarchyView-depth': row.depth } as React.CSSProperties}
-            onMouseDown={() => props.onSelect?.(node.id)}
+            onMouseDown={(event) => props.onSelect?.(node.id, event)}
         >
             <div className="HierarchyView-row">
                 {canToggle ? (

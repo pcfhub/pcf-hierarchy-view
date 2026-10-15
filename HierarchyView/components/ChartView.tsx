@@ -36,13 +36,16 @@ export interface ChartProps {
     strings: Strings;
     canOpenRecord: boolean;
     containerProps: React.HTMLAttributes<HTMLDivElement> & { ref: React.Ref<HTMLDivElement> };
-    onSelect: (id: string) => void;
+    onSelect: (id: string, event?: React.MouseEvent) => void;
     onToggle: (id: string) => void;
     onRetry: (id: string) => void;
     onShowAll: (id: string) => void;
     onOpen: (id: string) => void;
     fill: (template: string, value: string | number) => string;
 }
+
+/** A card's chevron hangs this far below its lower edge; the canvas leaves room for it under the last row. */
+const TOGGLE_OVERHANG = 12;
 
 const Chevron = (): React.ReactElement => (
     <svg className="HierarchyView-chevron" width="16" height="16" viewBox="0 0 20 20" aria-hidden="true" focusable="false">
@@ -70,7 +73,16 @@ export function ChartView(props: ChartProps): React.ReactElement {
     const { rows, strings, showImage } = props;
     const scroller = React.useRef<HTMLDivElement>(null);
     const [viewWidth, setViewWidth] = React.useState(0);
-    const centred = React.useRef<string | null>(null);
+    /*
+     * Whether the person has moved the view — scrolled it, pressed a key in
+     * it, pressed on it. Until they have, the chart keeps the record in the
+     * middle as the tree grows: on the form the first draw is the chain alone,
+     * and the second level arriving a moment later made it 696px wide in a
+     * 538px column with the record 79px off-centre (0.3.0 walkthrough, W5).
+     * Once they have, nothing moves under them.
+     */
+    const touched = React.useRef(false);
+    const lastSet = React.useRef<number | null>(null);
     const details = rows.reduce((most, row) => Math.max(most, row.node.details.filter((d) => d.text !== '').length), 0);
     const height = cardHeight(details, showImage);
 
@@ -97,42 +109,67 @@ export function ChartView(props: ChartProps): React.ReactElement {
         return () => observer.disconnect();
     }, []);
 
+    React.useEffect(() => {
+        touched.current = false;
+        lastSet.current = null;
+    }, [props.sourceKey]);
+
     /*
-     * The record the form is open on, in the middle of the view — once per
-     * tree, by `scrollLeft` alone, which moves nothing but the scroller (C2).
-     * Never `scrollIntoView` here: that scrolls the form too.
+     * The record the form is open on, in the middle of the view, by
+     * `scrollLeft` alone, which moves nothing but the scroller (C2) — never
+     * `scrollIntoView` here: that scrolls the form too.
      */
     React.useEffect(() => {
         const element = scroller.current;
         const box = layout.boxes.find((b) => b.id === props.currentId);
 
-        if (!element || !box || viewWidth === 0 || centred.current === props.sourceKey) {
+        if (!element || !box || viewWidth === 0 || touched.current) {
             return;
         }
 
-        centred.current = props.sourceKey;
-
         const total = layout.width + 2 * CHART_PAD;
         const wanted = box.x + CHART_PAD + CARD_WIDTH / 2 - viewWidth / 2;
+        const target = total <= viewWidth ? 0 : Math.max(0, Math.min(total - viewWidth, Math.round(wanted)));
 
-        element.scrollLeft = total <= viewWidth ? 0 : Math.max(0, Math.min(total - viewWidth, Math.round(wanted)));
+        lastSet.current = target;
+        element.scrollLeft = target;
     }, [layout, viewWidth, props.currentId, props.sourceKey]);
+
+    // A scroll that is not ours is the person's.
+    const onScroll = (): void => {
+        const element = scroller.current;
+
+        if (element && (lastSet.current === null || Math.abs(element.scrollLeft - lastSet.current) > 1)) {
+            touched.current = true;
+        }
+    };
+    const touch = (): void => {
+        touched.current = true;
+    };
 
     const total = layout.width + 2 * CHART_PAD;
     const overflows = viewWidth > 0 && total > viewWidth;
     // A chart narrower than its view sits in the middle of it, as an org chart is read.
     const offset = viewWidth > total ? Math.floor((viewWidth - total) / 2) : 0;
-    const canvasHeight = layout.height + 2 * CHART_PAD;
+    const canvasHeight = layout.height + 2 * CHART_PAD + TOGGLE_OVERHANG;
     const path = layout.lines
         .map((l) => `M${l.x1 + CHART_PAD} ${l.y1 + CHART_PAD}H${l.x2 + CHART_PAD}V${l.y2 + CHART_PAD}`)
         .join('');
 
     return (
-        <div {...props.containerProps} className="HierarchyView-chart" role="tree" aria-label={props.label || undefined}>
+        <div
+            {...props.containerProps}
+            className="HierarchyView-chart"
+            role="tree"
+            aria-label={props.label || undefined}
+            onKeyDownCapture={touch}
+            onMouseDownCapture={touch}
+        >
             <div
                 className="HierarchyView-chartScroll"
                 dir="ltr"
                 ref={scroller}
+                onScroll={onScroll}
                 // A horizontal scrollbar takes its height from inside the box; leave it room.
                 style={{ height: canvasHeight + (overflows ? 18 : 0) }}
             >
@@ -186,7 +223,7 @@ interface CardProps {
     strings: Strings;
     canOpenRecord: boolean;
     fill: (template: string, value: string | number) => string;
-    onSelect: (id: string) => void;
+    onSelect: (id: string, event?: React.MouseEvent) => void;
     onToggle: (id: string) => void;
     onRetry: (id: string) => void;
     onShowAll: (id: string) => void;
@@ -247,7 +284,7 @@ export function ChartCard(props: CardProps): React.ReactElement {
             aria-current={row.isCurrent ? 'true' : undefined}
             dir={props.dir}
             style={{ left: props.left, top: props.top, width: CARD_WIDTH, height: props.height }}
-            onMouseDown={() => props.onSelect(node.id)}
+            onMouseDown={(event) => props.onSelect(node.id, event)}
         >
             <div className="HierarchyView-nodeHead">
                 {props.image !== undefined && (

@@ -206,6 +206,19 @@ formatted values.
 
 ## Not verified
 
+- **Two instances on one form** (W8). Each instance prefixes its row ids
+  with its own counter, so `aria-activedescendant` cannot name the other's
+  row — asserted only in the rig.
+- **A screen reader reading the tree or the chart.** The markup is the
+  WAI-ARIA tree pattern's (one tab stop, `aria-activedescendant`, level,
+  set size, position, expanded, selected); nobody has listened to it under
+  Narrator or NVDA.
+- **The chart in a one-column section, with the label above.** Walked in a
+  two-column section with the label beside (538px) and narrowed to 289px;
+  a wider column is the same code with more room.
+- **A Power Pages or phone host for the chart.** The phone client is below
+  480px on most phones, so it would draw the tree.
+
 - **An unsaved record's `contextInfo`** — the *save the record first* state
   was reached in the rig only; the form was not opened on a new account.
 - **What `openForm` resolves with** from a field control; the page had
@@ -218,6 +231,37 @@ formatted values.
 - The phone client and Power Pages.
 - A hierarchy deeper than the platform's 100-recursion limit for hierarchical
   operators, and a node with more than 5,000 children.
+
+## Walkthrough — 0.3.0 to 0.3.2 on the form, 2026-10-15
+
+Built and walked by Claude in the browser pane on the account *Information*
+form, the control bound to *Parent Account* (label beside the field, a
+two-column section, a 538px column) with `layout` chart, `showImage` on and
+detail columns *City, Annual Revenue*; imported with pac, bound with
+`ppdev form control bind`. Three builds, because a re-import at the same
+number is ignored: **0.3.0** found two defects, **0.3.1** a third, **0.3.2**
+passed — so 0.3.2 is the first 0.3 release.
+
+For W2, a drawn picture was put in `cll_photo` (account's primary image here)
+on three sample accounts — Blue Yonder Airlines, City Power & Light, Coho
+Winery — with the user's agreement; they stay, so the form keeps showing
+them.
+
+| # | On the form | Expected | Answer |
+| --- | --- | --- | --- |
+| W1 | Open *City Power & Light*, chart | The chain as cards, the record marked, the control the field's column wide | 0.3.0: Blue Yonder above (Show all children), City Power marked *This record · Children: 1*, Fabrikam below; the control 538px — the column, not `allocatedWidth`'s 723.5 — and centred in it while narrower. |
+| W2 | Pictures on | Each card's picture from the primary image column; initials where there is none | 0.3.0, before any picture: Fluent's Avatar initials on every card (B, CL, FI). 0.3.1, after the three uploads, on Blue Yonder: the three pictures loaded (`cll_photo_url`, 144×144 each), the other two initials. |
+| W3 | Click a card, then the keys | Arrows walk the cards in tree order; the ring on the active card; nothing else moves | 0.3.0: Down → Fabrikam with the ring (`:focus-visible`); End → Coho Winery, the scroller following it 151px while the form's scroll stayed at 151; Enter (0.3.2) opened *New Account*, Fabrikam's child, in place. |
+| W4 | Narrow the window to 1000px | Below 480px the tree, with what was loaded; back to the chart when wide | The control's column went to 289px and the chart became the tree with all five rows and their pictures; at full width the chart again. The tree's keys worked there too (Down → Alpine Ski House, 1/3, level 2, ring drawn). |
+| W5 | Open *Blue Yonder* with `initialDepth` 2 | The record centred once the family has loaded; the form not scrolled | **0.3.1: not centred** — the first draw was Blue Yonder alone, the second level arrived after and made the chart 696px in 538 with the record 79px off-centre, because centring ran once, on the narrow first draw. **0.3.2** keeps centring as the tree grows until the person scrolls, presses or clicks: `scrollLeft` 79, the record's centre 0px off the view's, the form's scroll 0. |
+| W6 | *Show all children* on Blue Yonder | The siblings appear beside the record; the chart scrolls inside its column | Alpine Ski House and Coho Winery beside City Power; the canvas 696px in the 538px scroller, the form unmoved. **0.3.0 defect:** the press left focus on the button (`tabIndex -1` still takes mouse focus), which then unmounted, so the arrows stopped — **0.3.1** prevents the mousedown and focuses the tree without scrolling; checked on 0.3.2 with a real click on Fabrikam's chevron: it opened, focus stayed on the chart, the view did not jump. |
+| W7 | Dark (`&flags=themeOption%3Ddarkmode`) | The cards follow the app's theme | Dark cards (rgb 41,41,41), light text, the connectors and the pictures clear. |
+| W8 | A second instance on the form | Unique row ids per instance | **Not walked**: `ppdev` binds every copy of a column, and account has no second self-referential lookup on this form. The ids are prefixed per instance (`HierarchyView-<n>-<id>`); see *Not verified*. |
+
+**Also found by looking (0.3.0):** a chevron hanging off a card's lower edge
+ran into the horizontal scrollbar on the last row — the canvas now leaves 12px
+under it; and in the harness, a hanging card's chevron touched the next card in
+its column at 12px apart — now 20.
 
 ## Walkthrough — 0.1.0 on the form, 2026-09-18
 
