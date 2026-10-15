@@ -68,6 +68,10 @@ export function selectColumns(q: QueryShape): string[] {
         }
     });
 
+    if (q.image && isLogicalName(q.image) && out.indexOf(q.image) === -1) {
+        out.push(q.image);
+    }
+
     return out;
 }
 

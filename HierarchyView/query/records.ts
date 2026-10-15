@@ -57,6 +57,19 @@ export function childCount(row: Row): number | null {
     return Number.isFinite(count) && count >= 0 ? count : null;
 }
 
+/**
+ * The picture's URL, when the shape asked for one and the row has it: the
+ * relative `/Image/download.aspx?…` a form answers (C3), an absolute https
+ * one, or a `data:image/` one — which only a demo fixture holds, and which
+ * the hub's demo policy allows where it allows no other host. Anything else
+ * is no picture.
+ */
+export function imageOf(row: Row, q: QueryShape): string | null {
+    const value = q.image ? row[q.image] : null;
+
+    return typeof value === 'string' && /^(\/|https:\/\/|data:image\/)/.test(value) ? value : null;
+}
+
 /** One row → one node, or `null` for a row with no usable id. */
 export function toNode(row: Row, q: QueryShape): Node | null {
     const id = bareId(row[q.primaryId]);
@@ -71,6 +84,7 @@ export function toNode(row: Row, q: QueryShape): Node | null {
         parentId: parentIdOf(row, q.column),
         details: q.details.map((column) => ({ column, text: formatted(row, column) })),
         childCount: childCount(row),
+        image: imageOf(row, q),
     };
 }
 

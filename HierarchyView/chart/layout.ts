@@ -41,7 +41,11 @@ export interface ChartSizes {
     stackGap: number;
 }
 
-export const DEFAULT_SIZES: ChartSizes = { cardWidth: 216, cardHeight: 72, gapX: 16, gapY: 32, indent: 24, stackGap: 12 };
+/**
+ * `stackGap` leaves room for a hanging card's chevron, which sits half below
+ * its lower edge: at 12 it touched the next card in the column.
+ */
+export const DEFAULT_SIZES: ChartSizes = { cardWidth: 216, cardHeight: 72, gapX: 16, gapY: 32, indent: 24, stackGap: 20 };
 
 export interface ChartBox {
     id: string;

@@ -15,6 +15,12 @@ import { WebApiReader } from './data/HierarchyData';
 export interface PrimaryColumns {
     primaryId: string;
     primaryName: string;
+    /**
+     * The table's `PrimaryImageAttribute` — the picture the form's header
+     * shows — or `null` for a table without one. On the test environment
+     * account's is a custom Image column, not `entityimage` (SPEC.md C3b).
+     */
+    primaryImage: string | null;
 }
 
 export interface HostReading {
@@ -179,10 +185,12 @@ function primaryColumnsReader(context: ComponentFramework.Context<IInputs>): Hos
         utils.getEntityMetadata(target).then((metadata: any) => {
             const primaryId = String(metadata?.PrimaryIdAttribute ?? '').toLowerCase();
             const primaryName = String(metadata?.PrimaryNameAttribute ?? '').toLowerCase();
+            const primaryImage = String(metadata?.PrimaryImageAttribute ?? '').toLowerCase();
 
             return {
                 primaryId: isLogicalName(primaryId) ? primaryId : `${target}id`,
                 primaryName: isLogicalName(primaryName) ? primaryName : 'name',
+                primaryImage: isLogicalName(primaryImage) ? primaryImage : null,
             };
         });
 }

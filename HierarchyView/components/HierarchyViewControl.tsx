@@ -1,7 +1,10 @@
 import * as React from 'react';
-import { Button, FluentProvider, Spinner, webDarkTheme, webLightTheme } from '@fluentui/react-components';
+import { Avatar, Button, FluentProvider, Spinner, webDarkTheme, webLightTheme } from '@fluentui/react-components';
 import { faultMessage, HierarchySource } from '../data/HierarchyData';
+import { Buffer } from '../lib/tree-keys/typeAhead';
+import { canOpen, onTreeKey, positions } from '../tree/keyboard';
 import { initialState, pendingLoads, reduce, relativeDepth, visibleRows, VisibleRow } from '../tree/reducer';
+import { ChartView } from './ChartView';
 
 /** Every sentence the control can show, already resolved from the .resx. */
 export interface Strings {
@@ -29,6 +32,9 @@ export interface Strings {
 /** What the control has decided about the host, before any query runs. */
 export type Mode = 'live' | 'not-available' | 'save-first' | 'not-a-lookup' | 'no-access';
 
+/** 0.3.0: the indented tree, or the org chart — which is the tree again below `NARROW_BELOW`. */
+export type Layout = 'tree' | 'chart';
+
 export interface IProps {
     mode: Mode;
     /**
@@ -46,6 +52,11 @@ export interface IProps {
     sourceKey: string;
     currentId: string;
     initialDepth: number;
+    layout: Layout;
+    /** Each card shows the record's picture, or its initials where it has none. */
+    showImage: boolean;
+    /** The organisation URL a picture's relative address is joined to, or `null`. */
+    clientUrl: string | null;
     /** Opens a record, or `null` when the host cannot; never called for the current record. */
     openRecord: ((id: string) => Promise<void>) | null;
     visible: boolean;
@@ -68,6 +79,18 @@ export const fill = (template: string, value: string | number): string => templa
  * them on the form the control was built for.
  */
 export const NARROW_BELOW = 480;
+
+let instances = 0;
+
+/** Rows a Page Up or Page Down moves: about a screenful of 36px rows. */
+const PAGE = 10;
+
+/**
+ * A picture's address. The Web API answers it relative (`/Image/download.aspx?…`,
+ * SPEC.md C3); joined to the organisation URL it loads on the form (C4).
+ */
+export const pictureUrl = (image: string | null, clientUrl: string | null): string | undefined =>
+    image === null ? undefined : image.startsWith('/') && clientUrl ? `${clientUrl}${image}` : image;
 
 /**
  * Fluent's 16px ChevronRight, as a path so it scales with the button and
@@ -96,6 +119,11 @@ export function HierarchyViewControl(props: IProps): React.ReactElement | null {
     const rootRef = React.useRef<HTMLDivElement>(null);
     const [narrow, setNarrow] = React.useState(false);
     const { mode, resolve, sourceKey, initialDepth } = props;
+    const instance = React.useRef(`HierarchyView-${(instances += 1)}`).current;
+    const containerRef = React.useRef<HTMLDivElement & HTMLUListElement>(null);
+    const [focusId, setFocusId] = React.useState<string | null>(null);
+    const [focused, setFocused] = React.useState(false);
+    const typed = React.useRef<Buffer | null>(null);
 
     /*
      * Start over whenever the source changes. The `alive` flag is what keeps a
@@ -206,11 +234,74 @@ export function HierarchyViewControl(props: IProps): React.ReactElement | null {
     }, []);
 
     const rows = React.useMemo(() => visibleRows(state), [state]);
+    const places = React.useMemo(() => positions(rows), [rows]);
     const strings = props.strings;
+
+    /*
+     * The row that has the tree's focus: the one the keys last moved to, or —
+     * before any key, or when that row has gone shut under a closed parent —
+     * the record the form is open on.
+     */
+    let focusIndex = focusId === null ? -1 : rows.findIndex((row) => row.node.id === focusId);
+    if (focusIndex < 0) {
+        focusIndex = Math.max(0, rows.findIndex((row) => row.isCurrent));
+    }
+    const activeId = rows.length > 0 ? rows[focusIndex].node.id : null;
+    const domId = (id: string): string => `${instance}-${id}`;
+
+    // Keep the row a key moved to in sight — only while the tree has focus, so
+    // a load or a re-render never scrolls the form under somebody reading it.
+    React.useEffect(() => {
+        if (!focused || activeId === null) {
+            return;
+        }
+        const element = containerRef.current?.ownerDocument.getElementById(domId(activeId));
+        element?.scrollIntoView?.({ block: 'nearest', inline: 'nearest' });
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [activeId, focused]);
 
     if (!props.visible) {
         return null;
     }
+
+    const openRecord = (id: string): void => {
+        if (props.openRecord) {
+            props.openRecord(id).catch(() => undefined);
+        }
+    };
+
+    const onKeyDown = (event: React.KeyboardEvent): void => {
+        const outcome = onTreeKey(
+            rows,
+            focusIndex,
+            { key: event.key, ctrl: event.ctrlKey, meta: event.metaKey, alt: event.altKey },
+            typed.current,
+            Date.now(),
+            PAGE,
+        );
+
+        if (!outcome.handled) {
+            return;
+        }
+
+        event.preventDefault();
+        typed.current = outcome.buffer;
+        setFocusId(rows[outcome.focus].node.id);
+        outcome.effects.forEach((effect) => dispatch(effect));
+        if (outcome.open !== null) {
+            openRecord(outcome.open);
+        }
+    };
+
+    // The one tab stop, for either layout: the rows are never focused themselves.
+    const containerProps = {
+        ref: containerRef,
+        tabIndex: 0,
+        'aria-activedescendant': activeId === null ? undefined : domId(activeId),
+        onKeyDown,
+        onFocus: () => setFocused(true),
+        onBlur: () => setFocused(false),
+    };
 
     const theme = props.theme ?? (props.dark ? webDarkTheme : webLightTheme);
     const className = [
@@ -218,6 +309,9 @@ export function HierarchyViewControl(props: IProps): React.ReactElement | null {
         props.dark ? 'HierarchyView--dark' : '',
         narrow || (props.allocatedWidth !== null && props.allocatedWidth < NARROW_BELOW) ? 'HierarchyView--narrow' : '',
     ].filter(Boolean).join(' ');
+    // The chart needs room. Below the line it is the tree, measured off the
+    // control's own width — allocatedWidth is the field's whole cell (C1).
+    const chart = props.layout === 'chart' && !narrow;
 
     const message = (text: string, role?: 'alert'): React.ReactElement => (
         <p className="HierarchyView-message" role={role}>{text}</p>
@@ -242,15 +336,44 @@ export function HierarchyViewControl(props: IProps): React.ReactElement | null {
                 body = message(strings.notFound, 'alert');
             } else if (state.error !== null) {
                 body = message(fill(strings.loadFailed, state.error), 'alert');
+            } else if (chart) {
+                body = (
+                    <ChartView
+                        rows={rows}
+                        positions={places}
+                        domId={domId}
+                        activeId={activeId}
+                        sourceKey={sourceKey}
+                        currentId={props.currentId}
+                        isRTL={props.isRTL}
+                        showImage={props.showImage}
+                        imageUrl={(node) => pictureUrl(node.image, props.clientUrl)}
+                        label={props.label}
+                        strings={strings}
+                        canOpenRecord={props.openRecord !== null}
+                        containerProps={containerProps}
+                        onSelect={setFocusId}
+                        onToggle={(id) => dispatch({ type: 'toggle', id })}
+                        onRetry={(id) => dispatch({ type: 'retry', id })}
+                        onShowAll={(id) => dispatch({ type: 'showAll', id })}
+                        onOpen={openRecord}
+                        fill={fill}
+                    />
+                );
             } else {
                 body = (
-                    <ul className="HierarchyView-tree" role="tree" aria-label={props.label || undefined}>
-                        {rows.map((row) => (
+                    <ul {...containerProps} className="HierarchyView-tree" role="tree" aria-label={props.label || undefined}>
+                        {rows.map((row, index) => (
                             <TreeRow
                                 key={row.node.id}
                                 row={row}
                                 strings={strings}
                                 openRecord={props.openRecord}
+                                domId={domId(row.node.id)}
+                                active={row.node.id === activeId}
+                                position={places[index]}
+                                image={props.showImage ? pictureUrl(row.node.image, props.clientUrl) ?? null : undefined}
+                                onSelect={setFocusId}
                                 onToggle={(id) => dispatch({ type: 'toggle', id })}
                                 onRetry={(id) => dispatch({ type: 'retry', id })}
                                 onShowAll={(id) => dispatch({ type: 'showAll', id })}
@@ -274,6 +397,14 @@ export interface RowProps {
     row: VisibleRow;
     strings: Strings;
     openRecord: ((id: string) => Promise<void>) | null;
+    /** The id `aria-activedescendant` names; unique per instance. */
+    domId?: string;
+    /** The row the tree's focus is on. */
+    active?: boolean;
+    position?: { posInSet: number; setSize: number };
+    /** `undefined`: pictures are off. `null`: on, and this record has none — its initials. */
+    image?: string | null;
+    onSelect?: (id: string) => void;
     onToggle: (id: string) => void;
     onRetry: (id: string) => void;
     onShowAll: (id: string) => void;
@@ -289,11 +420,12 @@ export function TreeRow(props: RowProps): React.ReactElement {
     const { node } = row;
     const name = node.name || '—';
     const canToggle = row.hasChildren !== 'no' && !row.partial;
-    const canOpen = props.openRecord !== null && !row.isCurrent;
+    const canOpenRecord = props.openRecord !== null && !row.isCurrent;
     const classes = [
         'HierarchyView-item',
         row.isCurrent ? 'HierarchyView-item--current' : '',
         row.isAncestor ? 'HierarchyView-item--ancestor' : '',
+        props.active ? 'HierarchyView-item--active' : '',
     ].filter(Boolean).join(' ');
 
     const open = (): void => {
@@ -304,12 +436,17 @@ export function TreeRow(props: RowProps): React.ReactElement {
 
     return (
         <li
+            id={props.domId}
             className={classes}
             role="treeitem"
             aria-level={row.depth + 1}
-            aria-expanded={row.hasChildren === 'no' ? undefined : row.expanded}
+            aria-setsize={props.position?.setSize}
+            aria-posinset={props.position?.posInSet}
+            aria-expanded={canOpen(row) ? row.expanded : undefined}
+            aria-selected={props.active}
             aria-current={row.isCurrent ? 'true' : undefined}
             style={{ '--HierarchyView-depth': row.depth } as React.CSSProperties}
+            onMouseDown={() => props.onSelect?.(node.id)}
         >
             <div className="HierarchyView-row">
                 {canToggle ? (
@@ -319,16 +456,26 @@ export function TreeRow(props: RowProps): React.ReactElement {
                         className={`HierarchyView-toggle${row.expanded ? ' HierarchyView-toggle--open' : ''}`}
                         aria-label={fill(row.expanded ? strings.collapse : strings.expand, name)}
                         icon={<Chevron />}
+                        tabIndex={-1}
                         onClick={() => props.onToggle(node.id)}
                     />
                 ) : (
                     <span className="HierarchyView-toggle HierarchyView-toggle--none" aria-hidden="true" />
                 )}
 
+                {props.image !== undefined && (
+                    <Avatar
+                        className="HierarchyView-avatar"
+                        size={24}
+                        name={node.name}
+                        image={props.image ? { src: props.image, alt: '' } : undefined}
+                        aria-hidden="true"
+                    />
+                )}
                 <div className="HierarchyView-card">
                     <div className="HierarchyView-title">
-                        {canOpen ? (
-                            <button type="button" className="HierarchyView-open" onClick={open} aria-label={fill(strings.open, name)}>
+                        {canOpenRecord ? (
+                            <button type="button" tabIndex={-1} className="HierarchyView-open" onClick={open} aria-label={fill(strings.open, name)}>
                                 {name}
                             </button>
                         ) : (
@@ -353,7 +500,7 @@ export function TreeRow(props: RowProps): React.ReactElement {
 
             {row.partial && (
                 <div className="HierarchyView-note">
-                    <Button appearance="transparent" size="small" className="HierarchyView-showall" onClick={() => props.onShowAll(node.id)}>
+                    <Button appearance="transparent" size="small" tabIndex={-1} className="HierarchyView-showall" onClick={() => props.onShowAll(node.id)}>
                         {strings.showAll}
                     </Button>
                 </div>
@@ -367,7 +514,7 @@ export function TreeRow(props: RowProps): React.ReactElement {
             {row.failed !== null && (
                 <div className="HierarchyView-note HierarchyView-note--failed" role="alert">
                     <span>{fill(strings.loadFailed, row.failed)}</span>
-                    <Button appearance="transparent" size="small" onClick={() => props.onRetry(node.id)}>{strings.retry}</Button>
+                    <Button appearance="transparent" size="small" tabIndex={-1} onClick={() => props.onRetry(node.id)}>{strings.retry}</Button>
                 </div>
             )}
             {row.expanded && !row.loading && row.failed === null && row.hasChildren === 'no' && row.isCurrent && (

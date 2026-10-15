@@ -600,6 +600,67 @@ const Chart = pure('chart/layout');
     check('nothing to draw is an empty chart', JSON.stringify(Chart.layoutChart([], S)) === JSON.stringify({ width: 0, height: 0, boxes: [], lines: [] }));
 }
 
+/* ------------------------------------------------------ the inputs, 0.3.0 */
+
+{
+    const I = pure('inputs');
+
+    check(
+        'showImage: a blank one is null on a form and off (C5); the harness\'s "false" string is off too; true and "true" are on',
+        [null, undefined, 'false', false, 0, true, 'true', 1].map(I.asBoolean).join(',') === 'false,false,false,false,false,true,true,true',
+    );
+    check('layout: blank (null, C5) is the tree; only "chart" is the chart', [null, undefined, 'tree', 'Chart', 'chart'].map(I.asLayout).join(',') === 'tree,tree,tree,tree,chart');
+}
+
+/* ---------------------------------------------------------- the keys, 0.3.0 */
+
+/*
+ * The shared lib/tree-keys map, applied to this tree's rows (tree/keyboard.ts).
+ * The state: r1 › p1 (both ancestors, partial) › c1 (the record, open) ›
+ * k1 (closed, has children), k2 (a leaf).
+ */
+{
+    const K = pure('tree/keyboard');
+    let st = T.reduce(T.initialState('c1'), { type: 'chainLoaded', chain: [mk('r1', null, 2), mk('p1', 'r1', 2), mk('c1', 'p1', 2)], initialDepth: 1 });
+    st = T.reduce(st, { type: 'childrenLoaded', id: 'c1', children: [mk('k1', 'c1', 1), mk('k2', 'c1', 0)], truncated: false, expandChildren: false });
+    const vr = T.visibleRows(st);
+    const key = (focus, k, extra, buffer = null, now = 0) => K.onTreeKey(vr, focus, { key: k, ...(extra || {}) }, buffer, now, 3);
+    const effects = (o) => o.effects.map((e) => `${e.type}:${e.id}`).join(' ');
+
+    check(
+        'rows as the lib reads them: a level from 1, open for a partial ancestor, closed for a node with children, nothing for a leaf',
+        JSON.stringify(K.asTreeRows(vr).map((r) => [r.id, r.level, r.expanded === undefined ? 'leaf' : r.expanded])) === JSON.stringify([['r1', 1, true], ['p1', 2, true], ['c1', 3, true], ['k1', 4, false], ['k2', 4, 'leaf']]),
+        JSON.stringify(K.asTreeRows(vr)),
+    );
+    check('aria-posinset and aria-setsize among the siblings on show', JSON.stringify(K.positions(vr).map((p) => `${p.posInSet}/${p.setSize}`)) === JSON.stringify(['1/1', '1/1', '1/1', '1/2', '2/2']));
+    check('Down and Up move the focus; Home and End go to the ends', [key(2, 'ArrowDown').focus, key(2, 'ArrowUp').focus, key(3, 'Home').focus, key(0, 'End').focus].join() === '3,1,0,4');
+    check('Right on a closed node opens it through the reducer\'s toggle, focus stays', effects(key(3, 'ArrowRight')) === 'toggle:k1' && key(3, 'ArrowRight').focus === 3);
+    check('Left on a leaf goes to its parent; on an open node closes it', key(4, 'ArrowLeft').focus === 2 && effects(key(2, 'ArrowLeft')) === 'toggle:c1');
+    check('Right on an open node moves to its first child', key(2, 'ArrowRight').focus === 3 && key(2, 'ArrowRight').effects.length === 0);
+    check('Enter opens the record — but never the one the form is open on', key(3, 'Enter').open === 'k1' && key(2, 'Enter').open === null && key(2, 'Enter').handled);
+    check('* under an ancestor showing only its path child loads the rest of the family (Show all)', effects(key(2, '*')) === 'showAll:p1');
+    check('* among loaded siblings opens the closed ones', effects(key(3, '*')) === 'toggle:k1');
+    {
+        let failed = T.reduce(st, { type: 'toggle', id: 'k1' });
+        failed = T.reduce(T.reduce(failed, { type: 'loading', id: 'k1' }), { type: 'loadFailed', id: 'k1', message: 'Refused.' });
+        const out = K.onTreeKey(T.visibleRows(failed), 3, { key: 'ArrowRight' }, null, 0, 3);
+        check('Right on a node whose children could not be read asks again, as Retry does', out.effects.map((e) => `${e.type}:${e.id}`).join() === 'retry:k1' && out.handled);
+    }
+    {
+        // The rows are named R1, P1, C1, K1, K2.
+        const first = key(0, 'k', {}, null, 1000);
+        const grown = key(first.focus, '2', {}, first.buffer, 1200);
+        const fresh = key(grown.focus, 'k', {}, grown.buffer, 2000);
+        check(
+            'type-ahead: a letter finds the next name, a growing buffer narrows it, a pause starts again',
+            [first.focus, first.buffer.text, grown.focus, grown.buffer.text, fresh.focus, fresh.buffer.text].join() === '3,k,4,k2,3,k',
+            JSON.stringify([first.focus, grown.focus, fresh.focus]),
+        );
+    }
+    check('Ctrl+C, Escape and Tab are the host\'s', [key(2, 'c', { ctrl: true }), key(2, 'Escape'), key(2, 'Tab')].every((o) => !o.handled && o.effects.length === 0));
+    check('no rows, nothing taken', K.onTreeKey([], 0, { key: 'ArrowDown' }, null, 0).handled === false);
+}
+
 /* ----------------------------------------------- the two sources, live */
 
 async function sources() {
@@ -711,6 +772,24 @@ check(
         !== mount({ ...LOOKUP, inputs: { detailColumns: 'address1_city' } }).props().sourceKey,
 );
 
+/*
+ * 0.3.0's two inputs reach the component. The layout is not in the key —
+ * switching it redraws what is loaded — and the picture is, because it
+ * changes the query.
+ */
+check('layout reaches the component, blank as the tree', mount({ ...LOOKUP, inputs: { layout: 'chart' } }).props().layout === 'chart' && bound.props().layout === 'tree');
+check('showImage reaches it, the harness\'s "false" as off', mount({ ...LOOKUP, inputs: { showImage: true } }).props().showImage === true && mount({ ...LOOKUP, inputs: { showImage: 'false' } }).props().showImage === false);
+{
+    // Every mount has its own organisation URL, which is in the key; compare without it.
+    const keyOf = (m) => m.props().sourceKey.replace(m.props().clientUrl, '');
+    check(
+        'the picture changes the key; the layout does not',
+        keyOf(mount({ ...LOOKUP, inputs: { showImage: true } })) !== keyOf(bound) && keyOf(mount({ ...LOOKUP, inputs: { layout: 'chart' } })) === keyOf(bound),
+        [keyOf(bound), keyOf(mount({ ...LOOKUP, inputs: { layout: 'chart' } }))].join(' / '),
+    );
+}
+check('the organisation URL reaches the component, to join a picture\'s relative address to', typeof bound.props().clientUrl === 'string' && bound.props().clientUrl.startsWith('https://'));
+
 /* -------------------------------------------- the routes, through the bundle */
 
 async function routes() {
@@ -744,6 +823,37 @@ async function routes() {
     const guessed = await noUtils.props().resolve();
     await guessed.loadChain();
     check('without the Utility feature the primary columns are guessed, and the control still works', guessed.route === 'fetchxml' && noUtils.calls().some((c) => c.includes("attribute='accountid' operator='eq-or-above'")));
+
+    /*
+     * The picture: PrimaryImageAttribute's _url column, read first (C3b) —
+     * the server refuses a select of one the table does not have.
+     */
+    const pictured = mount({ ...LOOKUP, inputs: { showImage: true } });
+    // r1's children: p1 has a picture, o1 has none.
+    const pChain = (await (await pictured.props().resolve()).loadChildren('r1')).children;
+    const pQuery = pictured.calls().filter((c) => c.startsWith('webAPI.retrieveMultipleRecords')).pop();
+    check('showImage asks the FetchXML route for the primary image\'s _url column', pQuery.includes("<attribute name='entityimage_url'/>"), pQuery);
+    check(
+        '…and a node carries the relative address, or null where the row has none',
+        pChain.find((n) => n.id === 'p1').image === '/Image/download.aspx?Entity=account&Attribute=entityimage&Id=p1&Timestamp=638000000000000001'
+            && pChain.find((n) => n.id === 'o1').image === null,
+        JSON.stringify(pChain.map((n) => [n.id, n.image])),
+    );
+    const oPictured = mount({ ...LOOKUP, hierarchical: false, inputs: { showImage: true } });
+    const oKids = (await (await oPictured.props().resolve()).loadChildren('c1')).children;
+    check(
+        'the OData route selects it too, and the children carry theirs',
+        oPictured.calls().some((c) => c.startsWith('webAPI.retrieveMultipleRecords') && c.includes('entityimage_url')) && oKids.find((n) => n.id === 'k1').image !== null,
+        JSON.stringify(oKids.map((n) => [n.id, n.image])),
+    );
+    const custom = mount({ ...LOOKUP, primaryImageAttribute: 'cll_photo', inputs: { showImage: true } });
+    const cChain = (await (await custom.props().resolve()).loadChildren('r1')).children;
+    const cQuery = custom.calls().filter((c) => c.startsWith('webAPI.retrieveMultipleRecords')).pop();
+    check('a custom primary image is the column asked for — never entityimage by name', cQuery.includes("<attribute name='cll_photo_url'/>") && !cQuery.includes('entityimage') && cChain.length === 2, cQuery);
+    const none = mount({ ...LOOKUP, primaryImageAttribute: null, inputs: { showImage: true } });
+    const nChain = (await (await none.props().resolve()).loadChildren('r1')).children;
+    check('a table with no primary image is asked for no picture, and the tree still loads (initials only)', !none.calls().some((c) => /_url/.test(c)) && nChain.length === 2 && nChain.every((n) => n.image === null));
+    check('pictures off asks for none', !bound.calls().some((c) => /entityimage_url/.test(c)));
 }
 
 /* -------------------------------------------------------------- the markup */
@@ -775,6 +885,73 @@ check('the current record is marked and is not a link', treeMarkup.includes('ari
 check('a node with children gets a chevron labelled from the .resx with its name', treeMarkup.includes('aria-label="resx:HierarchyView_Collapse"') || treeMarkup.includes('Collapse'), treeMarkup.slice(0, 200));
 check('the ancestor at the top still shows its path child and the show-all affordance', treeMarkup.includes('resx:HierarchyView_ShowAll'));
 check('a count badge shows the server\'s number', treeMarkup.includes('>2</span>'));
+
+const quiet = (render) => {
+    const warn = console.error;
+    console.error = () => {};
+    try {
+        return render();
+    } finally {
+        console.error = warn;
+    }
+};
+const places = pure('tree/keyboard').positions(rows);
+const keyedMarkup = quiet(() => server.renderToStaticMarkup(React.createElement('ul', null, rows.map((r, i) =>
+    React.createElement(componentModule.TreeRow, {
+        key: r.node.id, row: r, strings, openRecord: () => Promise.resolve(), domId: `t-${r.node.id}`, active: r.isCurrent,
+        position: places[i], image: r.node.id === 'p1' ? 'https://org.example/Image/p1' : null,
+        onSelect: () => {}, onToggle: () => {}, onRetry: () => {}, onShowAll: () => {},
+    })))));
+check('each row carries the id aria-activedescendant names, and its place among its siblings', keyedMarkup.includes('id="t-c1"') && keyedMarkup.includes('aria-posinset="1"') && keyedMarkup.includes('aria-setsize="2"'));
+check('the active row is aria-selected, the rest are not', (keyedMarkup.match(/aria-selected="true"/g) || []).length === 1 && keyedMarkup.includes('aria-selected="false"'));
+check(
+    'one tab stop: no button inside a row is in the tab order',
+    !/<button(?![^>]*tabindex="-1")/.test(keyedMarkup.replace(/data-fluent="Button"[^>]*tabindex="-1"/g, '')) && (keyedMarkup.match(/tabindex="-1"/g) || []).length >= 6,
+    (keyedMarkup.match(/<button[^>]*>/g) || []).slice(0, 3).join(' '),
+);
+// TreeRow uses no hooks, so its element tree can be read straight off a call:
+// the stand-in Fluent drops an object prop like image={{ src }} from markup.
+const avatarImage = (id) => {
+    const row = rows.find((r) => r.node.id === id);
+    const tree = componentModule.TreeRow({ row, strings, openRecord: null, image: id === 'p1' ? 'https://org.example/Image/p1' : null, onToggle: () => {}, onRetry: () => {}, onShowAll: () => {} });
+    const find = (el) => {
+        if (!el || typeof el !== 'object') return null;
+        if (el.props && el.props.className === 'HierarchyView-avatar') return el;
+        const kids = [].concat(el.props ? el.props.children : []);
+        for (const k of kids) { const hit = find(k); if (hit) return hit; }
+        return null;
+    };
+    const avatar = find(tree);
+    return avatar && avatar.props.image ? avatar.props.image.src : undefined;
+};
+check(
+    'pictures on: an Avatar on each row, with the image where there is one',
+    (keyedMarkup.match(/data-fluent="Avatar"/g) || []).length === rows.length && avatarImage('p1') === 'https://org.example/Image/p1' && avatarImage('c1') === undefined,
+    `${(keyedMarkup.match(/data-fluent="Avatar"/g) || []).length} of ${rows.length}: ${(keyedMarkup.match(/<[^>]*Avatar[^>]*>/g) || []).slice(0, 2).join(' ')}`,
+);
+check('pictures off: none', !treeMarkup.includes('data-fluent="Avatar"'));
+check('a picture\'s relative address is joined to the organisation URL', componentModule.pictureUrl('/Image/x', 'https://org.example') === 'https://org.example/Image/x' && componentModule.pictureUrl(null, 'https://org.example') === undefined && componentModule.pictureUrl('/Image/x', null) === '/Image/x');
+
+const chartModule = load('components/ChartView');
+const chartMarkup = quiet(() => server.renderToStaticMarkup(React.createElement(chartModule.ChartView, {
+    rows, positions: places, domId: (id) => `c-${id}`, activeId: 'c1', sourceKey: 'k', currentId: 'c1', isRTL: false,
+    showImage: true, imageUrl: (n) => (n.id === 'p1' ? 'https://org.example/Image/p1' : undefined), label: 'Parent Account', strings,
+    canOpenRecord: true, containerProps: { ref: null, tabIndex: 0, 'aria-activedescendant': 'c-c1' }, fill: componentModule.fill,
+    onSelect: () => {}, onToggle: () => {}, onRetry: () => {}, onShowAll: () => {}, onOpen: () => {},
+})));
+check('the chart is one tab stop naming its active card', chartMarkup.includes('role="tree"') && chartMarkup.includes('tabindex="0"') && chartMarkup.includes('aria-activedescendant="c-c1"') && chartMarkup.includes('aria-label="Parent Account"'));
+check('a card per row, each a treeitem with its level and place', (chartMarkup.match(/role="treeitem"/g) || []).length === rows.length && chartMarkup.includes('id="c-c1"') && chartMarkup.includes('aria-level="3"'));
+check('the canvas is placed absolutely inside a left-to-right scroller (C1)', /class="HierarchyView-chartScroll" dir="ltr"/.test(chartMarkup) && chartMarkup.includes('HierarchyView-canvas'));
+check('the cards are placed by the layout, and the connectors drawn as one path', /style="left:\d+px;top:\d+px;width:216px;height:\d+px"/.test(chartMarkup) && /<path d="M\d/.test(chartMarkup), chartMarkup.slice(0, 400));
+check('the record the form is open on is marked, and is not a link', chartMarkup.includes('HierarchyView-node--current') && chartMarkup.includes('aria-current="true"'));
+check('an ancestor showing its path child offers Show all; a known count is said', chartMarkup.includes('resx:HierarchyView_ShowAll') && chartMarkup.includes('resx:HierarchyView_Children'));
+check('every card button is a mouse target only', !/<button(?![^>]*tabindex="-1")/.test(chartMarkup));
+check('the chart takes the user\'s direction back on each card', quiet(() => server.renderToStaticMarkup(React.createElement(chartModule.ChartView, {
+    rows, positions: places, domId: (id) => id, activeId: null, sourceKey: 'k', currentId: 'c1', isRTL: true, showImage: false,
+    imageUrl: () => undefined, label: '', strings, canOpenRecord: false, containerProps: { ref: null }, fill: componentModule.fill,
+    onSelect: () => {}, onToggle: () => {}, onRetry: () => {}, onShowAll: () => {}, onOpen: () => {},
+}))).includes('dir="rtl"'));
+check('a card is one height whatever it holds: the name, up to three details, the footer, room for a picture', chartModule.cardHeight(0, false) === 64 && chartModule.cardHeight(2, false) === 96 && chartModule.cardHeight(0, true) === 76 && chartModule.cardHeight(9, false) === 112);
 
 /* ---------------------------------------------------- what destroy owes */
 
@@ -886,6 +1063,18 @@ async function rigSelfCheck() {
         'rig: a hierarchical operator on a table that is not hierarchical is refused as a plain object',
         fault !== null && !(fault instanceof Error) && typeof fault.errorCode === 'number' && typeof fault.message === 'string',
         fault && fault.constructor.name,
+    );
+
+    let refusedO = null;
+    let refusedF = null;
+    const noPicture = host.createContext({ fixture, clientUrl: host.nextClientUrl(), primaryImageAttribute: null });
+    await noPicture.webAPI.retrieveMultipleRecords('account', '?$select=name,entityimage_url').catch((e) => { refusedO = e; });
+    await noPicture.webAPI.retrieveMultipleRecords('account', "?fetchXml=<fetch><entity name='account'><attribute name='entityimage_url'/></entity></fetch>").catch((e) => { refusedF = e; });
+    check(
+        'rig: a picture column the table does not have is refused in each route\'s own shape (C3b)',
+        refusedO && refusedO.errorCode === 2147879048 && /Could not find a property named 'entityimage_url'/.test(refusedO.message)
+            && refusedF && refusedF.errorCode === 2147750147 && /doesn't contain attribute/.test(refusedF.message),
+        JSON.stringify([refusedO && refusedO.message, refusedF && refusedF.message]),
     );
 
     const page = await ctx.webAPI.retrieveMultipleRecords('account', "?$select=accountid,name&$filter=_parentaccountid_value eq c1&$orderby=name asc", 1);

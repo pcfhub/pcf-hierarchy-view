@@ -37,6 +37,11 @@
     ?max=1                 children per node
     ?expand=k1,g1          click those nodes' chevrons after the tree loads
     ?showall=p1            press Show all children on that ancestor
+    ?layout=chart          0.3.0's org chart (the tree below 480px)
+    ?image=1               pictures on; the fixture's become drawn portraits
+                           (a data: URI each), since this page has no
+                           /Image/download.aspx to answer the real ones
+    ?primaryimage=none     a table with no picture column: initials only
     ?dark=1  ?rtl=1        theme and direction
     ?width=320             the width the host allocates (and the page's)
 -->
@@ -125,13 +130,41 @@
             relationshipsStatus: params.has('relationships') ? Number(params.get('relationships')) : 200,
             hierarchical: hierarchical === 'true' ? true : hierarchical === 'false' ? false : undefined,
             security: params.get('security') || 'none',
+            primaryImageAttribute: params.get('primaryimage') === 'none' ? null : 'entityimage',
             label: 'Parent Account',
             inputs: {
                 detailColumns: params.has('details') ? params.get('details') : 'address1_city, revenue',
                 initialDepth: params.has('depth') ? Number(params.get('depth')) : 1,
                 maxChildren: params.has('max') ? Number(params.get('max')) : 50,
+                layout: params.get('layout') || null,
+                showImage: params.get('image') === '1',
             },
         };
+
+        /*
+          A drawn portrait per record — a head and shoulders on a colour of its
+          own — so a screenshot shows what a picture looks like on a card. Two
+          records keep none, to show the initials beside them.
+        */
+        if (params.get('image') === '1') {
+            var hues = { r1: 210, p1: 18, c1: 150, s1: 280, k1: 40, k2: 330, g1: 190, o1: 100, o2: 0 };
+
+            fixture.tables.account.forEach(function (row) {
+                var hue = hues[row.accountid];
+
+                if (hue === undefined || row.accountid === 'k2' || row.accountid === 'o2') {
+                    delete row.entityimage_url;
+                    return;
+                }
+
+                var svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">'
+                    + '<rect width="64" height="64" fill="hsl(' + hue + ',45%,78%)"/>'
+                    + '<circle cx="32" cy="26" r="12" fill="hsl(' + hue + ',30%,42%)"/>'
+                    + '<path d="M10 64c2-14 11-21 22-21s20 7 22 21z" fill="hsl(' + hue + ',30%,42%)"/></svg>';
+
+                row.entityimage_url = 'data:image/svg+xml,' + encodeURIComponent(svg);
+            });
+        }
 
         var instance = new registration.ctor();
         var context = host.createContext(options);
@@ -173,12 +206,13 @@
 
         if (expand.length || showAll.length) {
             setTimeout(function () {
-                press(showAll, '.HierarchyView-showall');
-                press(expand, '.HierarchyView-toggle');
+                // The tree's chevron and Show all, or the chart's.
+                press(showAll, '.HierarchyView-showall, .HierarchyView-link');
+                press(expand, '.HierarchyView-toggle, .HierarchyView-nodeToggle');
                 // A second pass for nodes that only appeared after the first,
                 // pressing only chevrons that are still closed.
                 setTimeout(function () {
-                    press(expand, '.HierarchyView-toggle:not(.HierarchyView-toggle--open)');
+                    press(expand, '.HierarchyView-toggle:not(.HierarchyView-toggle--open), .HierarchyView-nodeToggle:not(.HierarchyView-nodeToggle--open)');
                 }, 200);
             }, 150);
         }

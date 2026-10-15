@@ -2,13 +2,10 @@ import * as React from 'react';
 import { IInputs, IOutputs } from './generated/ManifestTypes';
 import { HierarchyViewControl, IProps, Mode, Strings } from './components/HierarchyViewControl';
 import { createFetchXmlSource, createODataSource, HierarchySource } from './data/HierarchyData';
+import { asBoolean, asLayout } from './inputs';
 import { isHierarchical, readHost } from './platform';
 import { parseDetailColumns } from './query/fetchXml';
 import { QueryShape } from './query/types';
-import { Probe } from './probe'; // PROBE 0.2.9 — delete before 0.3.0
-
-/** PROBE 0.2.9: true packs the probe panel under the control; false is the control alone. */
-const PROBE = false;
 
 /** What `initialDepth` and `maxChildren` are clamped to: a form is not a place to load a whole tree. */
 const DEPTH_MAX = 5;
@@ -31,8 +28,6 @@ const clamp = (raw: number | null | undefined, fallback: number, min: number, ma
  */
 export class HierarchyView implements ComponentFramework.ReactControl<IInputs, IOutputs> {
     private resolved: { key: string; resolve: () => Promise<HierarchySource> } | null = null;
-    private probeContext!: ComponentFramework.Context<IInputs>; // PROBE 0.2.9
-    private probePasses = 0; // PROBE 0.2.9
 
     public init(context: ComponentFramework.Context<IInputs>): void {
         // Ask for width changes; without this `allocatedWidth` is -1 forever.
@@ -48,6 +43,8 @@ export class HierarchyView implements ComponentFramework.ReactControl<IInputs, I
         const initialDepth = clamp(inputs.initialDepth?.raw, 1, 0, DEPTH_MAX);
         const maxChildren = clamp(inputs.maxChildren?.raw, 50, CHILDREN_MIN, CHILDREN_MAX);
         const details = parseDetailColumns(inputs.detailColumns?.raw, [host.column]);
+        const layout = asLayout(inputs.layout?.raw);
+        const showImage = asBoolean(inputs.showImage?.raw);
         const strings = this.strings(context);
 
         let mode: Mode;
@@ -69,20 +66,22 @@ export class HierarchyView implements ComponentFramework.ReactControl<IInputs, I
             key = mode;
         } else {
             mode = 'live';
-            key = ['live', host.target, host.column, host.recordId, host.parentId ?? '', details.join(','), initialDepth, maxChildren, host.clientUrl ?? ''].join('|');
+            key = ['live', host.target, host.column, host.recordId, host.parentId ?? '', details.join(','), initialDepth, maxChildren, host.clientUrl ?? '', showImage ? 'image' : ''].join('|');
 
             const { webAPI, target, column, recordId, parentId, clientUrl, primaryColumns } = host;
 
             resolve = this.memo(key, async () => {
                 const primary = primaryColumns
-                    ? await primaryColumns(target).catch(() => ({ primaryId: `${target}id`, primaryName: 'name' }))
-                    : { primaryId: `${target}id`, primaryName: 'name' };
+                    ? await primaryColumns(target).catch(() => ({ primaryId: `${target}id`, primaryName: 'name', primaryImage: null }))
+                    : { primaryId: `${target}id`, primaryName: 'name', primaryImage: null };
                 const q: QueryShape = {
                     entity: target,
                     primaryId: primary.primaryId,
                     primaryName: primary.primaryName,
                     column,
                     details: details.filter((name) => name !== primary.primaryId && name !== primary.primaryName),
+                    // No primary image, no select: the column would refuse the query (C3b).
+                    image: showImage && primary.primaryImage ? `${primary.primaryImage}_url` : null,
                 };
                 // No client URL means no metadata read, and no metadata read
                 // means the route that works everywhere.
@@ -99,6 +98,9 @@ export class HierarchyView implements ComponentFramework.ReactControl<IInputs, I
             sourceKey: key,
             currentId,
             initialDepth,
+            layout,
+            showImage,
+            clientUrl: host.clientUrl,
             openRecord: host.openRecord,
             visible: host.visible,
             label: host.label,
@@ -109,15 +111,7 @@ export class HierarchyView implements ComponentFramework.ReactControl<IInputs, I
             strings,
         };
 
-        // PROBE 0.2.9 — the control as 0.2.0 draws it, the probe panel under it.
-        this.probeContext = context;
-        this.probePasses += 1;
-        if (!PROBE) {
-            return React.createElement(HierarchyViewControl, props);
-        }
-        return React.createElement(React.Fragment, null,
-            React.createElement(HierarchyViewControl, props),
-            React.createElement(Probe, { context: () => this.probeContext, passes: this.probePasses }));
+        return React.createElement(HierarchyViewControl, props);
     }
 
     /** The control writes nothing. An empty bag is "no change" on every host. */

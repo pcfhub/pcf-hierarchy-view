@@ -15,6 +15,13 @@ export interface QueryShape {
     column: string;
     /** Extra columns shown on a card, already filtered to logical names. */
     details: string[];
+    /**
+     * 0.3.0: the picture's URL column — the table's `PrimaryImageAttribute`
+     * with `_url` (`entityimage_url`, `cll_photo_url`) — when `showImage` is
+     * on and the table has one; otherwise absent. Never `entityimage_url` by
+     * name: a table without the column refuses the whole query (SPEC.md C3b).
+     */
+    image?: string | null;
 }
 
 /** One record as the tree holds it, whichever route it arrived by. */
@@ -31,6 +38,13 @@ export interface Node {
      * route cannot know — the fallback route.
      */
     childCount: number | null;
+    /**
+     * The picture, as the relative `/Image/download.aspx?…` the Web API
+     * answers (C3) — `null` without one, and always `null` when the shape
+     * asks for none. A FetchXML row omits the key for a record with no
+     * picture; an OData row answers `null`.
+     */
+    image: string | null;
 }
 
 /** Which of the two ways the tree is being read. */

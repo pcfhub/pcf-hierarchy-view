@@ -358,3 +358,195 @@
 .HierarchyView .HierarchyView-message[role="alert"] {
     color: var(--HierarchyView-foreground-danger);
 }
+
+/*
+ * 0.3.0: one tab stop. The tree (or the chart) is the focusable element and
+ * names the active row with `aria-activedescendant`; the browser draws no
+ * ring on a row it never focuses, so the ring is drawn here — on the active
+ * row, while the tree has keyboard focus (`:focus-visible` on the tree: a click
+ * focuses it without a ring, as Fluent's own tree does), in the form's focus
+ * colour.
+ */
+.HierarchyView .HierarchyView-tree:focus,
+.HierarchyView .HierarchyView-chart:focus {
+    outline: none;
+}
+
+.HierarchyView .HierarchyView-tree:focus-visible .HierarchyView-item--active > .HierarchyView-row,
+.HierarchyView .HierarchyView-chart:focus-visible .HierarchyView-node--active {
+    outline: 2px solid var(--HierarchyView-stroke-focus);
+    outline-offset: 1px;
+}
+
+/* The picture, Fluent's Avatar: its own initials where the record has none. */
+.HierarchyView .HierarchyView-avatar {
+    flex: 0 0 auto;
+}
+
+.HierarchyView .HierarchyView-row > .HierarchyView-avatar {
+    margin: -1px var(--spacingHorizontalXXS, 2px) 0 0;
+}
+
+/*
+ * The org chart. The scroller is the control's column, exactly — a block at
+ * 100% with nothing in its flow — and the canvas inside it is placed
+ * absolutely, so its width scrolls instead of widening the form's cell
+ * (SPEC.md C1: an in-flow canvas made the control 2,420px wide in a 540px
+ * column). Only sideways: the height is the drawing's, set by the component.
+ */
+.HierarchyView .HierarchyView-chart {
+    display: block;
+    width: 100%;
+}
+
+.HierarchyView .HierarchyView-chartScroll {
+    position: relative;
+    width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+}
+
+.HierarchyView .HierarchyView-canvas {
+    position: absolute;
+    left: 0;
+    top: 0;
+}
+
+.HierarchyView .HierarchyView-lines {
+    position: absolute;
+    left: 0;
+    top: 0;
+    overflow: visible;
+}
+
+.HierarchyView .HierarchyView-lines path {
+    fill: none;
+    stroke: var(--colorNeutralStroke1, #d1d1d1);
+    stroke-width: 1px;
+}
+
+.HierarchyView--dark .HierarchyView-lines path {
+    stroke: var(--colorNeutralStroke1, #666666);
+}
+
+/* A card: the row's surface, as a box of its own. */
+.HierarchyView .HierarchyView-node {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+    padding: var(--spacingVerticalS, 8px) var(--spacingHorizontalM, 12px);
+    border: 1px solid var(--colorNeutralStroke2, #e0e0e0);
+    border-radius: var(--HierarchyView-radius);
+    background-color: var(--colorNeutralBackground1, #ffffff);
+    box-shadow: var(--shadow2, 0 0 2px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.14));
+    transition: background-color var(--HierarchyView-duration-faster) var(--HierarchyView-curve-ease);
+}
+
+.HierarchyView--dark .HierarchyView-node {
+    border-color: var(--colorNeutralStroke2, #333333);
+    background-color: var(--colorNeutralBackground1, #292929);
+}
+
+.HierarchyView .HierarchyView-node:hover {
+    background-color: var(--colorNeutralBackground1Hover, #f5f5f5);
+}
+
+.HierarchyView--dark .HierarchyView-node:hover {
+    background-color: var(--colorNeutralBackground1Hover, #3d3d3d);
+}
+
+/* The record the form is open on: the brand stroke along the card's top. */
+.HierarchyView .HierarchyView-node--current {
+    border-top: 3px solid var(--HierarchyView-stroke-focus);
+    padding-top: calc(var(--spacingVerticalS, 8px) - 2px);
+}
+
+.HierarchyView .HierarchyView-nodeHead {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--spacingHorizontalS, 8px);
+    min-height: 0;
+    flex: 1 1 auto;
+}
+
+.HierarchyView .HierarchyView-nodeText {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    flex: 1 1 auto;
+}
+
+.HierarchyView .HierarchyView-nodeName,
+.HierarchyView .HierarchyView-nodeDetail {
+    display: block;
+    max-width: 100%;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    text-align: start;
+}
+
+.HierarchyView .HierarchyView-nodeName {
+    font-size: var(--HierarchyView-font-size);
+    line-height: var(--HierarchyView-line-height);
+}
+
+.HierarchyView .HierarchyView-nodeDetail {
+    color: var(--HierarchyView-foreground-secondary);
+    font-size: var(--HierarchyView-font-size-caption);
+    line-height: var(--HierarchyView-line-height-caption);
+}
+
+.HierarchyView .HierarchyView-nodeFoot {
+    display: flex;
+    align-items: center;
+    gap: var(--spacingHorizontalXS, 4px);
+    min-height: 20px;
+    overflow: hidden;
+    color: var(--HierarchyView-foreground-secondary);
+    font-size: var(--HierarchyView-font-size-caption);
+    line-height: var(--HierarchyView-line-height-caption);
+    white-space: nowrap;
+}
+
+.HierarchyView .HierarchyView-foot--failed {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: var(--HierarchyView-foreground-danger);
+}
+
+.HierarchyView .HierarchyView-link {
+    padding: 0;
+    min-width: 0;
+    min-height: 0;
+    height: auto;
+    font-size: inherit;
+}
+
+/* The chevron sits on the card's lower edge, over the line to its children. */
+.HierarchyView .HierarchyView-nodeToggle {
+    position: absolute;
+    left: 50%;
+    bottom: -12px;
+    width: 24px;
+    min-width: 24px;
+    height: 24px;
+    margin-left: -12px;
+    padding: 0;
+    background-color: var(--colorNeutralBackground1, #ffffff);
+    color: var(--HierarchyView-foreground-secondary);
+}
+
+.HierarchyView--dark .HierarchyView-nodeToggle {
+    background-color: var(--colorNeutralBackground1, #292929);
+}
+
+.HierarchyView .HierarchyView-nodeToggle .HierarchyView-chevron {
+    transform: rotate(90deg);
+}
+
+.HierarchyView .HierarchyView-nodeToggle--open .HierarchyView-chevron {
+    transform: rotate(-90deg);
+}

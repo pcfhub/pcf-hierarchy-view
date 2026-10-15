@@ -424,6 +424,15 @@
         entitySetName: 'accounts',
         /** What `getEntityMetadata(…).PrimaryNameAttribute` answers. */
         primaryNameAttribute: 'name',
+        /**
+         * What `getEntityMetadata(…).PrimaryImageAttribute` answers: the
+         * picture column, or `null` for a table with none. A query that
+         * selects an image's `_url` column other than this one's is refused
+         * the way the server refuses it (pcf-hierarchy-view SPEC.md C3b) —
+         * on the test environment account's was a custom column, not
+         * `entityimage`, and a table without one refuses the select.
+         */
+        primaryImageAttribute: 'entityimage',
 
         /**
          * The bound property's type, and — for a lookup — its target table and
@@ -790,6 +799,23 @@
              * why a control asks the metadata first rather than the query.
              */
             return Promise.reject(webApiFault(2147746307, 'Invalid Argument', 'Invalid Argument.'));
+        }
+
+        /*
+         * A picture's `_url` column the table does not have — anything but
+         * the primary image's — is refused, in the route's own shape (C3b):
+         * OData 0x80060888 "Could not find a property named …", FetchXML
+         * 0x80041103 "… entity doesn't contain attribute …".
+         */
+        var image = o && o.primaryImageAttribute ? o.primaryImageAttribute + '_url' : null;
+        var missing = q.attributes.map(function (a) { return a.name; }).filter(function (name) {
+            return /_url$/.test(name) && name !== image;
+        })[0];
+
+        if (missing !== undefined) {
+            return Promise.reject(isFetch
+                ? webApiFault(2147750147, '', "'" + entity + "' entity doesn't contain attribute with Name = '" + missing + "' and NameMapping = 'Logical'.")
+                : webApiFault(2147879048, '', "Could not find a property named '" + missing + "' on type 'Microsoft.Dynamics.CRM." + entity + "'."));
         }
 
         var matched = rows.filter(function (row) {
@@ -1629,6 +1655,12 @@
                         Object.defineProperty(Metadata.prototype, 'PrimaryNameAttribute', {
                             get: function () {
                                 return o.primaryNameAttribute;
+                            },
+                        });
+
+                        Object.defineProperty(Metadata.prototype, 'PrimaryImageAttribute', {
+                            get: function () {
+                                return o.primaryImageAttribute;
                             },
                         });
 

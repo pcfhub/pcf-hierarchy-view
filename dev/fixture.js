@@ -44,6 +44,7 @@
         row['_parentaccountid_value' + F] = parent === null ? undefined : NAMES[parent];
         row.address1_city = city;
         row.revenue = revenue;
+        row.entityimage_url = PICTURES[id];
         row['revenue' + F] = revenue === null ? undefined : '$' + revenue.toLocaleString('en-US', { minimumFractionDigits: 2 });
 
         // A null column has no formatted value, and the Web API omits the
@@ -56,6 +57,16 @@
 
         return row;
     }
+
+    /*
+     * Two pictures, as the Web API answers them: a relative address with a
+     * timestamp (pcf-hierarchy-view SPEC.md C3). Every other row has none —
+     * the key is left off, as a FetchXML result leaves it.
+     */
+    var PICTURES = {
+        p1: '/Image/download.aspx?Entity=account&Attribute=entityimage&Id=p1&Timestamp=638000000000000001',
+        k1: '/Image/download.aspx?Entity=account&Attribute=entityimage&Id=k1&Timestamp=638000000000000002',
+    };
 
     var NAMES = {
         r1: 'Contoso Holdings',
