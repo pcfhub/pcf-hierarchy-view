@@ -105,6 +105,24 @@
   <data name="maxChildren_Desc" xml:space="preserve">
     <value>Nombre d'enregistrements enfants chargés sous un nœud. Un nœud qui en a davantage l'indique.</value>
   </data>
+  <data name="layout_Name" xml:space="preserve">
+    <value>Disposition</value>
+  </data>
+  <data name="layout_Desc" xml:space="preserve">
+    <value>Mode d'affichage de la hiérarchie : une arborescence indentée, ou un organigramme de haut en bas. L'organigramme redevient une arborescence sous 480 pixels.</value>
+  </data>
+  <data name="layout_Tree" xml:space="preserve">
+    <value>Arborescence</value>
+  </data>
+  <data name="layout_Chart" xml:space="preserve">
+    <value>Organigramme</value>
+  </data>
+  <data name="showImage_Name" xml:space="preserve">
+    <value>Afficher les images</value>
+  </data>
+  <data name="showImage_Desc" xml:space="preserve">
+    <value>Affiche l'image de chaque enregistrement (sa colonne image) sur la carte, lorsque la table en a une.</value>
+  </data>
 
 
   <data name="HierarchyView_NoAccess" xml:space="preserve">

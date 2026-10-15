@@ -105,6 +105,24 @@
   <data name="maxChildren_Desc" xml:space="preserve">
     <value>1 つのノードの下に読み込む子レコードの数。それ以上ある場合はその旨を表示します。</value>
   </data>
+  <data name="layout_Name" xml:space="preserve">
+    <value>レイアウト</value>
+  </data>
+  <data name="layout_Desc" xml:space="preserve">
+    <value>階層の表示方法: インデントされたツリー、または上から下への組織図。480 ピクセル未満では組織図はツリーになります。</value>
+  </data>
+  <data name="layout_Tree" xml:space="preserve">
+    <value>ツリー</value>
+  </data>
+  <data name="layout_Chart" xml:space="preserve">
+    <value>組織図</value>
+  </data>
+  <data name="showImage_Name" xml:space="preserve">
+    <value>画像を表示</value>
+  </data>
+  <data name="showImage_Desc" xml:space="preserve">
+    <value>テーブルに画像列がある場合、各レコードの画像をカードに表示します。</value>
+  </data>
 
 
   <data name="HierarchyView_NoAccess" xml:space="preserve">

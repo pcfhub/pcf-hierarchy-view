@@ -105,6 +105,24 @@
   <data name="maxChildren_Desc" xml:space="preserve">
     <value>Cuántos registros hijos se cargan bajo un nodo. Un nodo con más lo indica.</value>
   </data>
+  <data name="layout_Name" xml:space="preserve">
+    <value>Diseño</value>
+  </data>
+  <data name="layout_Desc" xml:space="preserve">
+    <value>Cómo se dibuja la jerarquía: un árbol con sangría o un organigrama de arriba abajo. Por debajo de 480 píxeles el organigrama vuelve a ser un árbol.</value>
+  </data>
+  <data name="layout_Tree" xml:space="preserve">
+    <value>Árbol</value>
+  </data>
+  <data name="layout_Chart" xml:space="preserve">
+    <value>Organigrama</value>
+  </data>
+  <data name="showImage_Name" xml:space="preserve">
+    <value>Mostrar imágenes</value>
+  </data>
+  <data name="showImage_Desc" xml:space="preserve">
+    <value>Muestra la imagen de cada registro (su columna de imagen) en la tarjeta, cuando la tabla tiene una.</value>
+  </data>
 
 
   <data name="HierarchyView_NoAccess" xml:space="preserve">

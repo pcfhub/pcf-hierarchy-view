@@ -105,6 +105,24 @@
   <data name="maxChildren_Desc" xml:space="preserve">
     <value>Wie viele untergeordnete Datensätze unter einem Knoten geladen werden. Ein Knoten mit mehr weist darauf hin.</value>
   </data>
+  <data name="layout_Name" xml:space="preserve">
+    <value>Layout</value>
+  </data>
+  <data name="layout_Desc" xml:space="preserve">
+    <value>Wie die Hierarchie gezeichnet wird: als eingerückter Baum oder als Organigramm von oben nach unten. Unter 480 Pixeln wird das Organigramm zum Baum.</value>
+  </data>
+  <data name="layout_Tree" xml:space="preserve">
+    <value>Baum</value>
+  </data>
+  <data name="layout_Chart" xml:space="preserve">
+    <value>Organigramm</value>
+  </data>
+  <data name="showImage_Name" xml:space="preserve">
+    <value>Bilder anzeigen</value>
+  </data>
+  <data name="showImage_Desc" xml:space="preserve">
+    <value>Zeigt das Bild jedes Datensatzes (seine Bildspalte) auf der Karte, sofern die Tabelle eine hat.</value>
+  </data>
 
 
   <data name="HierarchyView_NoAccess" xml:space="preserve">

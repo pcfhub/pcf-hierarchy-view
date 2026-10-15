@@ -9,6 +9,51 @@ to. The bound column is the whole configuration: the target table comes from
 `attributes.LogicalName`, the record's own parent from `raw[0]`, and the record's
 own id from `mode.contextInfo.entityId`.
 
+## Measured — the 0.2.9 probe (for 0.3.0: an org chart, pictures, one tab stop)
+
+0.3.0 adds a `layout` input — the indented tree, or an **org chart** drawn top
+down that scrolls sideways inside the control and falls back to the tree below
+480 pixels — a `showImage` input for each record's picture, and the WAI-ARIA
+tree keyboard the control has never had (one tab stop, arrows inside, from the
+template's `lib/tree-keys`). Picked by the 25th demand run (2026-10-15): PCF
+Gallery's two hierarchy requests, 28 and 10 votes, and the hub had no org chart.
+
+The 0.2.9 build is the control as 0.2.0 draws it with `HierarchyView/probe.tsx`
+under it, printing into the control and the console under
+`[hierarchy-view probe 0.2.9]`. The manifest already carries `layout` and
+`showImage`, so the property panel is part of what is measured. The A questions
+are not for this control — it calls no action — but for the skill, whose
+*Calling a Web API function* section has said since 2026-09-18 that no action
+was ever measured; they run against a throwaway, no-plug-in Custom API created
+and deleted from the console (`__hierarchyProbe.setup()` / `actions()` /
+`cleanup()`).
+
+**The rule:** an answer that goes the wrong way removes what depends on it. C3
+or C4 the wrong way cuts `showImage`, not the chart. Keyboard reach is not
+asked again: `pcf-code-editor`'s 1.6.9 probe pressed every key the pattern
+uses on this form and the form took none.
+
+| # | Question | Decides | Answer |
+| --- | --- | --- | --- |
+| C1 | On a one-column and a two-column section: `allocatedWidth`, `allocatedHeight` (expected −1), and whether a 2,400-pixel canvas scrolls **inside** the control without widening the section or the page — and whether the control follows the window both ways (Chart View's X7: grew and never shrank) | the chart's scroller; the root taking `allocatedWidth` | |
+| C2 | Setting the inner scroller's `scrollLeft` to centre a box moves the form's own scroll by nothing — at mount and on a button | centring the current record at mount | |
+| C3 | `entityimage_url` through both routes — OData `$select` on `retrieveRecord`/`retrieveMultipleRecords` and a FetchXML `<attribute>` — on account and contact: its shape (relative?), and what a record with no picture answers | the column the routes add when `showImage` is on | |
+| C4 | That URL as an `<img src>` on the form: loads (with the user's session, under the form's CSP), and as a same-origin `fetch`: status and content type | `showImage` at all | |
+| C5 | The property panel: `layout` blank → `raw`? `showImage` blank → `raw`, and its type (boolean or string)? | the defaults and the TwoOptions normaliser | |
+| A1 | An unbound action (`pcfhub_ProbeEcho`, string in, string out, no plug-in) by same-origin `fetch` POST: which headers it needs (Content-Type, OData-Version), whether the session cookie is the whole of authentication, and the success shape (200 + body, or 204) | the skill's *Calling a Web API action* | |
+| A2 | The bound twin on `accounts(<id>)/Microsoft.Dynamics.CRM.pcfhub_ProbeEchoAccount` — and unqualified, and called unbound | the same section: the URL shapes | |
+| A3 | The refusals: a missing required parameter, a wrong type, an unknown parameter, a malformed body, an action that does not exist, a GET on an action — each status and `{ error: { code, message } }` | the rig's action stub, refusals first | |
+| A4 | Does a no-plug-in bound action touch the record (`modifiedon`, `versionnumber`)? | what the rig's stub may change | |
+
+**To run it:** import `HierarchyView_0.2.9_probe.zip` (unmanaged, as an upgrade),
+publish, hard-reload the account form that carries the control on *Parent
+Account*, on an account **with a parent and children**. For C4 at least one
+account needs a picture (the avatar in the form header). C1 wants the control
+in a one-column and then a two-column section (or the browser narrowed and
+widened). Then in the console: `await __hierarchyProbe.setup()`, `await
+__hierarchyProbe.actions()`, `await __hierarchyProbe.cleanup()`,
+`copy(__hierarchyProbe.dump())`.
+
 ## Measured — the 0.0.1 probe
 
 The 0.0.1 build is a probe: `HierarchyView/probe.tsx` asks the form the

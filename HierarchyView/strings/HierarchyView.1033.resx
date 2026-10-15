@@ -102,6 +102,24 @@
   <data name="maxChildren_Desc" xml:space="preserve">
     <value>How many child records are loaded under one node. A node with more says so.</value>
   </data>
+  <data name="layout_Name" xml:space="preserve">
+    <value>Layout</value>
+  </data>
+  <data name="layout_Desc" xml:space="preserve">
+    <value>How the hierarchy is drawn: an indented tree, or an org chart from the top down. The chart becomes the tree below 480 pixels.</value>
+  </data>
+  <data name="layout_Tree" xml:space="preserve">
+    <value>Tree</value>
+  </data>
+  <data name="layout_Chart" xml:space="preserve">
+    <value>Org chart</value>
+  </data>
+  <data name="showImage_Name" xml:space="preserve">
+    <value>Show pictures</value>
+  </data>
+  <data name="showImage_Desc" xml:space="preserve">
+    <value>Show each record's picture (its image column) on the card, where the table has one.</value>
+  </data>
 
 
   <!--

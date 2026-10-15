@@ -5,6 +5,7 @@ import { createFetchXmlSource, createODataSource, HierarchySource } from './data
 import { isHierarchical, readHost } from './platform';
 import { parseDetailColumns } from './query/fetchXml';
 import { QueryShape } from './query/types';
+import { Probe } from './probe'; // PROBE 0.2.9 — delete before 0.3.0
 
 /** What `initialDepth` and `maxChildren` are clamped to: a form is not a place to load a whole tree. */
 const DEPTH_MAX = 5;
@@ -27,6 +28,8 @@ const clamp = (raw: number | null | undefined, fallback: number, min: number, ma
  */
 export class HierarchyView implements ComponentFramework.ReactControl<IInputs, IOutputs> {
     private resolved: { key: string; resolve: () => Promise<HierarchySource> } | null = null;
+    private probeContext!: ComponentFramework.Context<IInputs>; // PROBE 0.2.9
+    private probePasses = 0; // PROBE 0.2.9
 
     public init(context: ComponentFramework.Context<IInputs>): void {
         // Ask for width changes; without this `allocatedWidth` is -1 forever.
@@ -103,7 +106,12 @@ export class HierarchyView implements ComponentFramework.ReactControl<IInputs, I
             strings,
         };
 
-        return React.createElement(HierarchyViewControl, props);
+        // PROBE 0.2.9 — the control as 0.2.0 draws it, the probe panel under it.
+        this.probeContext = context;
+        this.probePasses += 1;
+        return React.createElement(React.Fragment, null,
+            React.createElement(HierarchyViewControl, props),
+            React.createElement(Probe, { context: () => this.probeContext, passes: this.probePasses }));
     }
 
     /** The control writes nothing. An empty bag is "no change" on every host. */

@@ -7,7 +7,7 @@
   -->
   <control namespace="PCFHub"
            constructor="HierarchyView"
-           version="0.2.0"
+           version="0.2.9"
            display-name-key="HierarchyView_Name"
            description-key="HierarchyView_Desc"
            control-type="virtual">
@@ -103,6 +103,39 @@
               usage="input"
               required="false"
               default-value="50" />
+
+    <!--
+      0.3.0: how the hierarchy is drawn. `tree` is the indented list every
+      earlier version drew, and stays the default so a form that had 0.2 opens
+      as it did; `chart` draws an org chart, top down, scrolling sideways
+      inside the control — and the tree again below 480 pixels, where a chart
+      is one card wide.
+    -->
+    <property name="layout"
+              display-name-key="layout_Name"
+              description-key="layout_Desc"
+              of-type="Enum"
+              usage="input"
+              required="false"
+              default-value="tree">
+      <value name="tree" display-name-key="layout_Tree">tree</value>
+      <value name="chart" display-name-key="layout_Chart">chart</value>
+    </property>
+
+    <!--
+      0.3.0: the record's picture on each card — the table's image column
+      (entityimage), which accounts, contacts and users have. Off by default:
+      a TwoOptions input cannot default to on, and a picture is a request per
+      card. Read through a normaliser, because the hub's harness hands the
+      value over as the string "false".
+    -->
+    <property name="showImage"
+              display-name-key="showImage_Name"
+              description-key="showImage_Desc"
+              of-type="TwoOptions"
+              usage="input"
+              required="false"
+              default-value="false" />
 
     <resources>
       <code path="index.ts" order="1" />
