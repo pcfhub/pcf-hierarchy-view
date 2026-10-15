@@ -7,6 +7,9 @@ import { parseDetailColumns } from './query/fetchXml';
 import { QueryShape } from './query/types';
 import { Probe } from './probe'; // PROBE 0.2.9 — delete before 0.3.0
 
+/** PROBE 0.2.9: true packs the probe panel under the control; false is the control alone. */
+const PROBE = false;
+
 /** What `initialDepth` and `maxChildren` are clamped to: a form is not a place to load a whole tree. */
 const DEPTH_MAX = 5;
 const CHILDREN_MIN = 1;
@@ -109,6 +112,9 @@ export class HierarchyView implements ComponentFramework.ReactControl<IInputs, I
         // PROBE 0.2.9 — the control as 0.2.0 draws it, the probe panel under it.
         this.probeContext = context;
         this.probePasses += 1;
+        if (!PROBE) {
+            return React.createElement(HierarchyViewControl, props);
+        }
         return React.createElement(React.Fragment, null,
             React.createElement(HierarchyViewControl, props),
             React.createElement(Probe, { context: () => this.probeContext, passes: this.probePasses }));

@@ -535,6 +535,71 @@ check('initialDepth 2 opens the children as they land', T.pendingLoads(deep).inc
 check('initialDepth 0 shows the current record closed', T.pendingLoads(T.reduce(T.initialState('c1'), { type: 'chainLoaded', chain: [mk('c1', null)], initialDepth: 0 })).length === 0);
 check('an empty chain is not-found', T.reduce(T.initialState('c1'), { type: 'chainLoaded', chain: [], initialDepth: 1 }).error === 'not-found');
 
+/* --------------------------------------------------------- the org chart */
+
+/*
+ * 0.3.0's chart is arithmetic over the same rows the tree draws, loaded
+ * through the template's modules.js so the React-free rule is enforced, not
+ * remembered: chart/layout.ts and the shared lib/tree-keys may import nothing
+ * of React or Fluent.
+ */
+const { createLoader } = require('./modules');
+const pure = createLoader({ root: src, forbid: [[/react|fluentui/, 'stay free of React']] });
+const Chart = pure('chart/layout');
+
+{
+    const r = (id, depth, expanded = false) => ({ id, depth, expanded });
+    const S = { cardWidth: 100, cardHeight: 40, gapX: 10, gapY: 20, indent: 10, stackGap: 5 };
+    const at = (layout) => layout.boxes.map((b) => `${b.id}@${b.x},${b.y}`).join(' ');
+
+    const chain = Chart.layoutChart([r('top', 0, true), r('mid', 1, true), r('me', 2, true), r('a', 3), r('b', 3)], S);
+    check(
+        'a chain stacks straight down, and two leaves hang in a column off one trunk',
+        at(chain) === 'top@0,0 mid@0,60 me@0,120 a@10,170 b@10,215' && chain.width === 110 && chain.height === 255,
+        `${at(chain)} — ${chain.width}×${chain.height}`,
+    );
+    check(
+        '…the trunk runs from the parent\'s foot to the last card\'s middle, with a branch to each card',
+        JSON.stringify(chain.lines.filter((l) => l.x1 === 5 || l.x2 === 5)) === JSON.stringify([
+            { x1: 5, y1: 190, x2: 10, y2: 190 }, { x1: 5, y1: 235, x2: 10, y2: 235 }, { x1: 5, y1: 160, x2: 5, y2: 235 },
+        ]),
+        JSON.stringify(chain.lines),
+    );
+
+    const rows = [r('top', 0, true), r('t1', 1, true), r('a', 2), r('b', 2), r('t2', 1, true), r('c', 2), r('t3', 1, true), r('d', 2, true), r('e', 3), r('f', 3)];
+    const wide = Chart.layoutChart(rows, S);
+    check(
+        'teams side by side, each as wide as it needs: a hanging team 110, a one-card team 100, a team of a team 110',
+        at(wide) === 'top@115,0 t1@0,60 a@10,110 b@10,155 t2@120,60 c@120,120 t3@230,60 d@230,120 e@240,170 f@240,215' && wide.width === 340,
+        `${at(wide)} — ${wide.width}`,
+    );
+    check('a single leaf sits under its parent rather than hanging', wide.boxes.find((b) => b.id === 'c').x === wide.boxes.find((b) => b.id === 't2').x);
+    check('the parent is centred over its first and last child', wide.boxes[0].x + 50 === (50 + 280) / 2);
+    check(
+        'the boxes come back in row order — the order the keyboard and a screen reader walk',
+        wide.boxes.map((b) => b.id).join(',') === rows.map((x) => x.id).join(','),
+    );
+    check(
+        'an elbow: a stem from the parent, one bar across the heads, a drop to each child',
+        wide.lines.some((l) => l.x1 === 165 && l.y1 === 40 && l.x2 === 165 && l.y2 === 50)
+            && wide.lines.some((l) => l.x1 === 50 && l.x2 === 280 && l.y1 === 50 && l.y2 === 50),
+        JSON.stringify(wide.lines.filter((l) => l.y1 === 40 || l.y1 === 50)),
+    );
+
+    const rtl = Chart.layoutChart(rows, S, true);
+    check(
+        'right to left mirrors the chart: the first team is on the right',
+        rtl.boxes.find((b) => b.id === 't1').x === 240 && rtl.boxes[0].x === 125 && rtl.width === wide.width,
+        at(rtl),
+    );
+    check(
+        'centring: the record\'s middle in the middle of the view, held inside what the canvas can scroll',
+        Chart.centreOn(wide, 'c', 150, 100) === 95 && Chart.centreOn(wide, 'f', 150, 100) === 190 && Chart.centreOn(wide, 'top', 2000, 100) === 0,
+        `${Chart.centreOn(wide, 'c', 150, 100)} ${Chart.centreOn(wide, 'f', 150, 100)}`,
+    );
+    check('nothing to draw is an empty chart', JSON.stringify(Chart.layoutChart([], S)) === JSON.stringify({ width: 0, height: 0, boxes: [], lines: [] }));
+}
+
 /* ----------------------------------------------- the two sources, live */
 
 async function sources() {
