@@ -238,9 +238,10 @@ Built and walked by Claude in the browser pane on the account *Information*
 form, the control bound to *Parent Account* (label beside the field, a
 two-column section, a 538px column) with `layout` chart, `showImage` on and
 detail columns *City, Annual Revenue*; imported with pac, bound with
-`ppdev form control bind`. Three builds, because a re-import at the same
+`ppdev form control bind`. Four builds, because a re-import at the same
 number is ignored: **0.3.0** found two defects, **0.3.1** a third, **0.3.2**
-passed — so 0.3.2 is the first 0.3 release.
+passed W1–W7, and **0.3.3** carries a fourth fix found taking the screenshots
+(W9) — so 0.3.3 is the first 0.3 release.
 
 For W2, a drawn picture was put in `cll_photo` (account's primary image here)
 on three sample accounts — Blue Yonder Airlines, City Power & Light, Coho
@@ -257,6 +258,7 @@ them.
 | W6 | *Show all children* on Blue Yonder | The siblings appear beside the record; the chart scrolls inside its column | Alpine Ski House and Coho Winery beside City Power; the canvas 696px in the 538px scroller, the form unmoved. **0.3.0 defect:** the press left focus on the button (`tabIndex -1` still takes mouse focus), which then unmounted, so the arrows stopped — **0.3.1** prevents the mousedown and focuses the tree without scrolling; checked on 0.3.2 with a real click on Fabrikam's chevron: it opened, focus stayed on the chart, the view did not jump. |
 | W7 | Dark (`&flags=themeOption%3Ddarkmode`) | The cards follow the app's theme | Dark cards (rgb 41,41,41), light text, the connectors and the pictures clear. |
 | W8 | A second instance on the form | Unique row ids per instance | **Not walked**: `ppdev` binds every copy of a column, and account has no second self-referential lookup on this form. The ids are prefixed per instance (`HierarchyView-<n>-<id>`); see *Not verified*. |
+| W9 | 0.3.3: *Show all children* on Blue Yonder, watched while it loads | The branch under it stays on show; the family joins it | On *City Power & Light*: 4 cards before, **never fewer than 4 while the query ran** (a MutationObserver counting), 6 after; the record never left the page. |
 
 **Also found by looking (0.3.0):** a chevron hanging off a card's lower edge
 ran into the horizontal scrollbar on the last row — the canvas now leaves 12px
