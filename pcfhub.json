@@ -60,7 +60,7 @@
     "datasetFixture": "demo/accounts.json",
     "limitations": [
       "The demo’s Dataverse is a fixture held in your browser: twelve accounts in one tree, the form sitting on Contoso Deutschland GmbH, and the Parent Account lookup between them. The control reads the record, walks up to the top with retrieveRecord and asks for each node’s children with an OData filter, exactly as on a form; nothing is saved, and Reset or a reload puts it back.",
-      "The tree is drawn without child-count badges, the way a form draws it on a lookup nobody marked hierarchical. The faster route a hierarchical lookup takes — one FetchXML query for the ancestors and a count per node — cannot run here: the demo’s Dataverse reports no hierarchical relationships and answers no FetchXML.",
+      "A node’s child count shows only once it has been opened, and every closed node has a chevron until then — the way a form draws a lookup nobody marked hierarchical. The faster route a hierarchical lookup takes — one FetchXML query for the ancestors and a count per node — cannot run here: the demo’s Dataverse reports no hierarchical relationships and answers no FetchXML.",
       "Every preset sits on the same record, because the demo has one fixture and one form record. The top of the tree and a leaf are in the screenshots.",
       "Detail texts are the fixture’s strings. On a form they are the platform’s formatted values — a currency with its symbol, a choice as its label — which the fixture imitates.",
       "Clicking a name opens nothing: the card calls navigation.openForm, and there is no form here to open. The harness reports the call and the tree stays.",

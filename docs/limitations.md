@@ -24,11 +24,12 @@ Each of these is a constraint that was chosen, not a defect waiting on a fix.
   children shows the first page, ordered by name, and says *Showing the first
   N*. There is no *load more* under one node — a record with hundreds of direct
   children is a list, not a tree, and a view serves it better.
-- **Counts need a hierarchical relationship.** The child-count badge and the
-  "chevron only where there are children" behaviour come from Dataverse's
-  `CountChildren` aggregate, which exists only for a relationship flagged
-  hierarchical. On any other self-referential lookup every node gets a chevron
-  until it is opened. The flag is one checkbox on the relationship.
+- **Counts before opening need a hierarchical relationship.** A closed node's
+  child-count badge and the "chevron only where there are children" behaviour
+  come from Dataverse's `CountChildren` aggregate, which exists only for a
+  relationship flagged hierarchical. On any other self-referential lookup every
+  node gets a chevron until it is opened, and its count once it has. The flag is
+  one checkbox on the relationship.
 - **One hundred levels.** Dataverse limits hierarchical operators to 100
   recursions, and the fallback route stops walking up after 20 levels. Neither
   has been met by a real hierarchy.
