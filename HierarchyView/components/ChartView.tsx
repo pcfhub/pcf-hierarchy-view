@@ -292,14 +292,14 @@ export function ChartCard(props: CardProps): React.ReactElement {
                 )}
                 <div className="HierarchyView-nodeText">
                     {canOpenThis ? (
-                        <button type="button" tabIndex={-1} className="HierarchyView-open HierarchyView-nodeName" onClick={() => props.onOpen(node.id)} title={name}>
+                        <button type="button" tabIndex={-1} className="HierarchyView-open HierarchyView-nodeName" onClick={() => props.onOpen(node.id)} title={name} dir="auto">
                             {name}
                         </button>
                     ) : (
-                        <span className="HierarchyView-name HierarchyView-nodeName" title={name}>{name}</span>
+                        <span className="HierarchyView-name HierarchyView-nodeName" title={name} dir="auto">{name}</span>
                     )}
                     {shown.slice(0, 3).map((detail) => (
-                        <span key={detail.column} className="HierarchyView-nodeDetail" title={detail.text}>{detail.text}</span>
+                        <span key={detail.column} className="HierarchyView-nodeDetail" title={detail.text} dir="auto">{detail.text}</span>
                     ))}
                 </div>
             </div>

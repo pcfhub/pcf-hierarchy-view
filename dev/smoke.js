@@ -964,6 +964,11 @@ check('the record the form is open on is marked, and is not a link', chartMarkup
 check('an ancestor showing its path child offers Show all; a known count is said', chartMarkup.includes('resx:HierarchyView_ShowAll') && chartMarkup.includes('resx:HierarchyView_Children'));
 check('every card button is a mouse target only', !/<button(?![^>]*tabindex="-1")/.test(chartMarkup));
 {
+    // A Latin name in a right-to-left card was cut at its beginning on the hub's demo (0.3.3): each text takes its own direction.
+    const texts = [...chartMarkup.matchAll(/<(?:button|span)[^>]*class="[^"]*HierarchyView-node(?:Name|Detail)[^"]*"[^>]*>/g)].map((m) => m[0]);
+    check('every card name and detail is dir="auto", so a long one is cut at its own end', texts.length >= rows.length && texts.every((tag) => tag.includes('dir="auto"')), `${texts.length} texts`);
+}
+{
     // The last row's chevron hangs 12px under its card: the canvas leaves it room above the scrollbar (0.3.0 walkthrough).
     const bottoms = [...chartMarkup.matchAll(/top:(\d+)px;width:216px;height:(\d+)px/g)].map((m) => Number(m[1]) + Number(m[2]));
     const canvas = Number((/class="HierarchyView-canvas" style="[^"]*height:(\d+)px/.exec(chartMarkup) || [])[1]);

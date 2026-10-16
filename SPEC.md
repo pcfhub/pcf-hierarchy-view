@@ -204,6 +204,21 @@ counts, a different record per preset (one fixture, one form record — the top
 and a leaf are in the screenshots), a card click, and the platform's own
 formatted values.
 
+**0.3.3 on the live page, 2026-10-16** (`demo-check --live` in light, dark and
+on the phone device, then a walk over CDP): six presets clean on each; the
+chart in dark and on a tablet, the tree on a phone; RTL mirrored; the keys
+walking the cards with the ring drawn; *Show all* never below eight cards while
+it loaded, nine after; Remount, German and the pictures preset's initials
+right; no error in the page or the frame. **Found by looking:** under RTL the
+chart cut *Contoso München — Niederlassung Süd, Vertrieb und Service* at its
+beginning ("…g Süd, Vertrieb und Service") — a card's name and details are
+`dir="auto"` now, so a Latin name in a right-to-left card is cut at its own
+end and a short one stays on the card's side. And `demo.limitations` said the
+demo draws no child-count badges; it draws one once a node is opened — the
+sentence says so now. Two things left as they are: on a phone with pictures
+on, the current row's count wraps under its name; Fluent's `Avatar` gives a
+name of four or more words one initial ("C").
+
 ## Not verified
 
 - **Two instances on one form** (W8). Each instance prefixes its row ids

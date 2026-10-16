@@ -487,6 +487,17 @@
     text-align: start;
 }
 
+/*
+ * A card's name and details are `dir="auto"`: a Latin name in a right-to-left
+ * card is cut at its own end, not its beginning ("…g Süd, Vertrieb und
+ * Service" on the hub's demo, 0.3.3). That makes `start` the text's side, so
+ * a short one is put back on the card's.
+ */
+.HierarchyView .HierarchyView-node[dir="rtl"] .HierarchyView-nodeName,
+.HierarchyView .HierarchyView-node[dir="rtl"] .HierarchyView-nodeDetail {
+    text-align: right;
+}
+
 .HierarchyView .HierarchyView-nodeName {
     font-size: var(--HierarchyView-font-size);
     line-height: var(--HierarchyView-line-height);
