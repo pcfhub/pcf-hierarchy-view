@@ -12,13 +12,17 @@ A record's place in its hierarchy — ancestors above, children below — from i
 **Reference example · built with AI.** This control was written with AI (Claude) and tested on a live Dataverse form; its code has not been reviewed line by line. It is published as a worked example and is not maintained — read the source and [SPEC.md](https://github.com/pcfhub/pcf-hierarchy-view/blob/main/SPEC.md) (what was measured on the form) before you use it. Fixes are not guaranteed.
 :::
 
-::image{src=media/screenshot.png alt="An account form section showing Contoso Holdings at the top, Contoso Europe beneath it, the open record Contoso Deutschland GmbH marked 'This record' with a count of 2, and its two child accounts indented below with their city and revenue" zoom}
+::image{src=media/screenshot-chart-0.3.png alt="An org chart on an account form: Contoso Holdings at the top with Contoso Americas and Contoso Europe side by side beneath it, each card with a picture, a city and a revenue; under Contoso Europe the open record Contoso Deutschland GmbH, marked 'This record', with its two subsidiaries below it" zoom}
+
+::image{src=media/screenshot.png alt="The same hierarchy as an indented tree: Contoso Holdings at the top, Contoso Europe beneath it, the open record Contoso Deutschland GmbH marked 'This record' with a count of 2, and its two child accounts indented below with their city and revenue" zoom}
 
 Place it on the lookup that points at a record's own table — **Parent Account**
 on an account, **Manager** on a user, the *Parent* column of a custom table —
 and it draws the record's position in that hierarchy: every ancestor up to the
 top, the record itself marked, and its children beneath it, each expandable
-one level at a time. Click a name to open that record.
+one level at a time — as an indented tree, or since 0.3.0 as an **org chart**,
+top down, with each record's **picture** if you want them. Click a name to
+open that record.
 
 Model-driven apps removed their built-in hierarchy visualisation in October
 2025. This is a replacement that lives on the form rather than behind a button,
@@ -42,6 +46,16 @@ relationship was ever flagged as hierarchical.
   arrive all at once.
 - **It shows the columns you name.** Up to three logical names under each
   record — a city, a revenue, an owner — as the platform formats them.
+- **A tree or an org chart.** The tree fits any column. The chart lays a team
+  of teams side by side and hangs a team of leaves in a column, so twelve
+  direct reports are one card wide; it scrolls sideways inside its own column
+  and keeps this record in the middle. Below 480 pixels it draws the tree.
+- **Pictures, from the table's own image column.** Whatever the table shows in
+  its form header — `entityimage`, or a custom Image column made primary — on
+  each card, and the record's initials where it has none.
+- **One stop for the keyboard.** Tab reaches the tree once; the arrows walk it,
+  → and ← open and close, Home and End jump, typing a name finds it, Enter
+  opens the record. The same keys in both layouts.
 - **It never writes.** The control is bound to the parent lookup to read it,
   and leaves the column exactly as it found it.
 
@@ -50,7 +64,7 @@ relationship was ever flagged as hierarchical.
 | Host | Works | Notes |
 | --- | --- | --- |
 | Model-driven form (web) | Yes | Both routes, counts on a hierarchical lookup |
-| Model-driven form (phone, tablet) | Yes | The indent tightens below 480px; not yet measured on the phone client |
+| Model-driven form (phone, tablet) | Yes | Below 480px the chart draws the tree and the indent tightens; not yet measured on the phone client |
 | Canvas app | No | Binds a `Lookup.Simple`, which canvas cannot |
 | Power Pages | No | No Web API from a code component there |
 

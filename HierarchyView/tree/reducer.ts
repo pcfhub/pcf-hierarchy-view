@@ -20,6 +20,15 @@ export interface TreeState {
     children: Record<string, string[]>;
     /** For a chain node whose children are not loaded: the one child on the path. */
     pathChild: Record<string, string>;
+    /**
+     * Ancestors asked to show all their children, while those load. The path
+     * child stays on show meanwhile: until 0.3.2 *Show all children* forgot it
+     * at once, and the whole branch under the ancestor — the record the form
+     * is open on included — vanished until the query answered (found taking
+     * 0.3's screenshots; in the chart the layout jumped and the keyboard's
+     * row was gone).
+     */
+    showingAll: Record<string, true>;
     expanded: Record<string, true>;
     loading: Record<string, true>;
     /** The platform's message, per node whose children could not be read. */
@@ -49,6 +58,7 @@ export const initialState = (currentId: string): TreeState => ({
     nodes: {},
     children: {},
     pathChild: {},
+    showingAll: {},
     expanded: {},
     loading: {},
     failed: {},
@@ -139,6 +149,7 @@ export function reduce(state: TreeState, action: TreeAction): TreeState {
                 expanded,
                 children: { ...state.children, [action.id]: action.children.map((child) => child.id) },
                 pathChild: without(state.pathChild, action.id),
+                showingAll: without(state.showingAll, action.id),
                 loading: without(state.loading, action.id),
                 failed: without(state.failed, action.id),
                 truncated: action.truncated
@@ -167,10 +178,11 @@ export function reduce(state: TreeState, action: TreeAction): TreeState {
             return { ...state, failed: without(state.failed, action.id), expanded: { ...state.expanded, [action.id]: true } };
 
         case 'showAll':
-            // Forget the one known child; the node becomes pending and loads all.
+            // The node becomes pending and loads all; its one known child stays
+            // on show until the rest arrive, and goes when they do.
             return {
                 ...state,
-                pathChild: without(state.pathChild, action.id),
+                showingAll: { ...state.showingAll, [action.id]: true },
                 expanded: { ...state.expanded, [action.id]: true },
                 failed: without(state.failed, action.id),
             };
@@ -258,7 +270,7 @@ export function visibleRows(state: TreeState): VisibleRow[] {
         seen.add(id);
 
         const loaded = state.children[id];
-        const partial = !loaded && Boolean(state.pathChild[id]);
+        const partial = !loaded && Boolean(state.pathChild[id]) && !state.showingAll[id];
         const expanded = Boolean(state.expanded[id]);
 
         rows.push({
@@ -338,7 +350,7 @@ export const pendingLoads = (state: TreeState): string[] =>
         (id) =>
             Boolean(state.nodes[id])
             && !state.children[id]
-            && !state.pathChild[id]
+            && (!state.pathChild[id] || Boolean(state.showingAll[id]))
             && !state.loading[id]
             && !state.failed[id]
             && hasChildren(state, id) !== 'no',

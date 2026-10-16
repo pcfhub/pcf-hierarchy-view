@@ -1,6 +1,6 @@
 {
   "name": "pcf-hierarchy-view",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "description": "A record's place in its hierarchy — ancestors above, children below — from its parent lookup.",
   "license": "MIT",
   "private": true,
@@ -19,7 +19,8 @@
     "bump": "node scripts/version.mjs",
     "release": "node scripts/release.mjs",
     "demo-check": "node dev/demo-check.js",
-    "keys": "node dev/keys-walk.js"
+    "keys": "node dev/keys-walk.js",
+    "shots": "node dev/shots.js"
   },
   "devDependencies": {
     "@fluentui/react-components": "9.46.2",

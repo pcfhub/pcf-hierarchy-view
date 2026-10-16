@@ -284,24 +284,26 @@ screenshots were taken too wide to show — and 0.1.1 carries the fixes, so
 
 ## Screenshots
 
-Headless Chrome against `dev/preview.html` on the harness server
-(`npm run harness -- --port 8096 --no-open`), at
-`--force-device-scale-factor=2 --virtual-time-budget=4000 --hide-scrollbars`;
-the page's `?width=` sets the width the host allocates and the root's, and
-the window is 32 wider for the page's padding:
+`npm run shots` (`dev/shots.js`) retakes every picture in `media/` from
+`dev/preview.html` in headless Chrome, framing `#root`; the recipes — the
+query string that arranges each state — are in that file, not here. Serve the
+harness first: `npm run harness -- --no-open --port 8181`. `npm run shots --
+0.3` retakes only 0.3's.
 
-| File | Query | Window |
-| --- | --- | --- |
-| `screenshot.png` | `?width=760` | 792×300 |
-| `screenshot-expanded.png` | `?showall=p1&expand=k1&width=760` | 792×380 |
-| `screenshot-fallback.png` | `?hierarchical=false&width=760` | 792×300 |
-| `screenshot-dark.png` | `?dark=1&showall=p1&width=760` | 792×330 |
-| `screenshot-narrow.png` | `?width=300&depth=2` | 332×380 |
+0.3's pictures carry `-0.3` in their names because the hub mirrors a path
+once and never fetches it again. `?image=1` draws a portrait per record as a
+data URI: the preview has no `/Image/download.aspx` to answer the real
+addresses. The logo is `media/logo.svg` in an `<img>` at 256 on a
+transparent body with `--default-background-color=00000000`, checked RGBA by
+reading the IHDR.
 
-Heights are `document.body.scrollHeight` read off the page first. New file
-names on every retake — the hub's mirror never re-fetches a path. The logo is
-`media/logo.svg` in an `<img>` at 256 on a transparent body with
-`--default-background-color=00000000`, checked RGBA by reading the IHDR.
+**Found by looking, while taking 0.3's** (0.3.3): *Show all children* on an
+ancestor forgot its path child at once, so the whole branch under it — the
+record the form is open on included — vanished until the query answered; a
+second *Show all* pressed in that moment hit a button no longer on the page,
+and the chart's layout jumped. The path child now stays on show until the
+family arrives (`showingAll` in the reducer). It was there since 0.1.0 in the
+tree, where the flicker was short; the chart made it visible.
 
 ## Promoting a finding
 

@@ -24,6 +24,23 @@ above it, the record marked, and its subsidiaries beneath with their city and
 annual revenue. Each ancestor carries a count and a *Show all children* action
 that reveals the record's siblings.
 
+## The same hierarchy as an org chart, with pictures
+
+Same binding, three more settings:
+
+| Property | Value |
+| --- | --- |
+| Layout | *Org chart* |
+| Show pictures | On |
+| Levels open at start | `2` |
+
+Opening *Blue Yonder Airlines* draws it at the top with its picture, its three
+subsidiaries side by side beneath it — the one with a subsidiary of its own
+open, because two levels open at start — and centres Blue Yonder in the
+column once they have loaded. Put it in a full-width section with the label
+above; in a two-column section beside a label, a narrow window turns it back
+into the tree.
+
 ## A custom table whose parent lookup was never flagged
 
 A *Location* table with a *Parent Location* lookup, created in the maker
@@ -56,5 +73,6 @@ User form:
 | Detail columns | `title, businessunitid` |
 | Levels open at start | `1` |
 
-The tree reads as an org chart down from the top of the reporting line to the
-user's direct reports, each with their title and business unit.
+With **Layout** set to *Org chart* and **Show pictures** on, it is one: the
+reporting line from the top down to this user, their direct reports hanging in
+a column beneath them, each with their photo, title and business unit.

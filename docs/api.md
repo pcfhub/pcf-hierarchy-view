@@ -38,6 +38,10 @@ server. The first three survivors are shown, in the order given, as the
 platform formats them: a currency with its symbol, a choice as its label, a
 lookup as the related record's name.
 
+**Layout** is `tree` or `chart`; blank is the tree. **Show pictures** is a
+Yes/No; blank is off. Neither is a default the platform hands over — a blank
+input arrives empty, and the control reads empty as the tree and as off.
+
 **Levels open at start** is clamped to 0–5. **Children per node** is clamped to
 1–250 and is the page size of every children query; a node with more children
 than that shows the first page and says so.

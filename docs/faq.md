@@ -62,9 +62,28 @@ It calls the platform's `openForm`, which opens the record the way the app is
 configured to — normally in place, replacing the current form. The current
 record is not a link.
 
+## I chose Org chart and see the tree.
+
+The control's column is under 480 pixels — a two-column section beside its
+label is, on a laptop window. The chart needs the width, so below that it draws
+the tree, with everything already loaded; widen the window, or give the field a
+section of its own with the label above, and the chart comes back.
+
+## The chart is wider than the column. Where is the rest?
+
+Inside the control: it scrolls sideways, with a scrollbar under the cards. The
+arrow keys bring the record they move to into view.
+
+## Pictures are on and every card shows initials.
+
+The records have no picture in the table's primary image column — which may
+not be `entityimage`: a custom Image column can be made primary, and then the
+pictures in `entityimage` are not the ones shown. Or the table has no image
+column, and the control asks for none.
+
 ## Does it work offline / on the phone?
 
-It renders in the phone layout — below 480 pixels the indent tightens so four
-levels still fit — and it needs a connection, because everything it shows is read from Dataverse when the
+It renders in the phone layout — below 480 pixels the chart draws the tree and
+the indent tightens so four levels still fit — and it needs a connection, because everything it shows is read from Dataverse when the
 form opens. It has not yet been opened on the phone client itself; see
 [Limitations](limitations.md).

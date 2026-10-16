@@ -516,7 +516,14 @@ tree = T.reduce(tree, { type: 'retry', id: 'k1' });
 check('retry forgets the failure and the node is pending again', JSON.stringify(T.pendingLoads(tree)) === '["k1"]' && T.visibleRows(tree)[3].failed === null);
 
 tree = T.reduce(tree, { type: 'showAll', id: 'p1' });
-check('show all on an ancestor forgets its path child and makes it pending', T.pendingLoads(tree).includes('p1') && T.visibleRows(tree)[1].partial === false);
+check('show all on an ancestor makes it pending and no longer partial', T.pendingLoads(tree).includes('p1') && T.visibleRows(tree)[1].partial === false);
+check(
+    '…and keeps the branch under it on show while the family loads — the record included (0.3.2)',
+    T.visibleRows(tree).map((r) => r.node.id).join(',') === 'r1,p1,c1,k1,k2' && T.visibleRows(tree)[2].isCurrent,
+    T.visibleRows(tree).map((r) => r.node.id).join(','),
+);
+tree = T.reduce(tree, { type: 'loading', id: 'p1' });
+check('…loading, it is not asked for twice', !T.pendingLoads(tree).includes('p1'));
 tree = T.reduce(tree, { type: 'childrenLoaded', id: 'p1', children: [mk('c1', 'p1', 2), mk('s1', 'p1', 0)], truncated: false, expandChildren: false });
 rows = T.visibleRows(tree);
 check(
@@ -610,6 +617,16 @@ const Chart = pure('chart/layout');
         [null, undefined, 'false', false, 0, true, 'true', 1].map(I.asBoolean).join(',') === 'false,false,false,false,false,true,true,true',
     );
     check('layout: blank (null, C5) is the tree; only "chart" is the chart', [null, undefined, 'tree', 'Chart', 'chart'].map(I.asLayout).join(',') === 'tree,tree,tree,tree,chart');
+
+    const Rec = pure('query/records');
+    const shape = { entity: 'account', primaryId: 'accountid', primaryName: 'name', column: 'parentaccountid', details: [], image: 'entityimage_url' };
+    const pic = (value) => Rec.imageOf({ entityimage_url: value }, shape);
+    check(
+        'a picture is a relative address, an https one or a data:image one — nothing else reaches an <img src>',
+        [pic('/Image/download.aspx?Id=1'), pic('https://org.example/Image/x'), pic('data:image/png;base64,AA')].every((v) => v !== null)
+            && [pic('javascript:alert(1)'), pic('http://org.example/x'), pic('blob:x'), pic('photo.png'), pic(''), pic(5)].every((v) => v === null),
+    );
+    check('and none when the shape asked for no picture', Rec.imageOf({ entityimage_url: '/Image/x' }, { ...shape, image: null }) === null);
 }
 
 /* ---------------------------------------------------------- the keys, 0.3.0 */
@@ -946,6 +963,12 @@ check('the cards are placed by the layout, and the connectors drawn as one path'
 check('the record the form is open on is marked, and is not a link', chartMarkup.includes('HierarchyView-node--current') && chartMarkup.includes('aria-current="true"'));
 check('an ancestor showing its path child offers Show all; a known count is said', chartMarkup.includes('resx:HierarchyView_ShowAll') && chartMarkup.includes('resx:HierarchyView_Children'));
 check('every card button is a mouse target only', !/<button(?![^>]*tabindex="-1")/.test(chartMarkup));
+{
+    // The last row's chevron hangs 12px under its card: the canvas leaves it room above the scrollbar (0.3.0 walkthrough).
+    const bottoms = [...chartMarkup.matchAll(/top:(\d+)px;width:216px;height:(\d+)px/g)].map((m) => Number(m[1]) + Number(m[2]));
+    const canvas = Number((/class="HierarchyView-canvas" style="[^"]*height:(\d+)px/.exec(chartMarkup) || [])[1]);
+    check('the canvas leaves room under the lowest card for its chevron and the padding', canvas >= Math.max(...bottoms) + 12 + 8, `${canvas} for cards ending at ${Math.max(...bottoms)}`);
+}
 check('the chart takes the user\'s direction back on each card', quiet(() => server.renderToStaticMarkup(React.createElement(chartModule.ChartView, {
     rows, positions: places, domId: (id) => id, activeId: null, sourceKey: 'k', currentId: 'c1', isRTL: true, showImage: false,
     imageUrl: () => undefined, label: '', strings, canOpenRecord: false, containerProps: { ref: null }, fill: componentModule.fill,

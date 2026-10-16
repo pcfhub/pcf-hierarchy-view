@@ -35,10 +35,25 @@ Each of these is a constraint that was chosen, not a defect waiting on a fix.
 - **An ancestor the user cannot read ends the chain there.** The tree starts at
   the top-most record the user is allowed to see, without saying that anything
   sits above it. Saying so would leak that a record exists.
-- **Below 480 pixels the indent tightens** from 24 to 16 pixels per level, so
-  four levels still fit a phone; nothing is hidden. The measurement is the
-  control's own width, not the browser's — a narrow form column on a desktop
-  does the same.
-- **Not yet measured on the phone client or Power Pages.** The web client is
-  where every claim above was checked; the phone layout renders in the
-  harness and has not been opened on a device.
+- **Below 480 pixels the org chart draws the tree, and the tree's indent
+  tightens** from 24 to 16 pixels per level, so four levels still fit a phone;
+  nothing is hidden. The measurement is the control's own width, not the
+  browser's — a narrow form column on a desktop does the same, and a field
+  with its label beside it in a two-column section is often that narrow.
+- **The chart has no zoom and no fit-to-width.** Cards are one size; a wide
+  family scrolls sideways inside the control rather than shrinking until the
+  names are unreadable. Only what is loaded is drawn: an ancestor shows the
+  branch you are on until *Show all children*, as in the tree.
+- **Every card is one height**, the height the card with the most detail lines
+  needs, so a level is one straight line. A long name is cut with an ellipsis
+  and shown whole on hover; the tree wraps it instead.
+- **Pictures come from the table's primary image column only.** One picture
+  per record, the 144-pixel thumbnail; a second Image column is not read. A
+  table without an image column shows initials.
+- **You cannot pick a parent from the tree.** It shows the hierarchy; it does
+  not set the lookup it is bound to.
+- **Not yet measured on the phone client or Power Pages**, and **not yet
+  heard under a screen reader.** The web client is where every claim above was
+  checked; the phone layout renders in the harness and has not been opened on
+  a device, and the keyboard follows the WAI-ARIA tree pattern but nobody has
+  listened to it with Narrator or NVDA.

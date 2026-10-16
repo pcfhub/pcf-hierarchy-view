@@ -3,9 +3,11 @@
   "slug": "pcf-hierarchy-view",
   "name": "Hierarchy View",
   "tagline": "A record's place in its hierarchy — ancestors above, children below — from its parent lookup.",
-  "summary": "Place it on a lookup that points at the record's own table, such as Parent Account or Manager, and it draws the record's place in that hierarchy: every ancestor up to the top, the record itself marked, and its children beneath, expandable one level at a time. Click a name to open that record.\n\n- Configures itself from the lookup it is bound to\n- Works whether or not the relationship was flagged as hierarchical in Dataverse\n\nModel-driven apps only. It stands in for the built-in hierarchy view those apps removed in October 2025.",
+  "summary": "Place it on a lookup that points at the record's own table, such as Parent Account or Manager, and it draws the record's place in that hierarchy: every ancestor up to the top, the record itself marked, and its children beneath, expandable one level at a time — as an indented tree or, since 0.3.0, as an org chart with each record's picture. Click a name to open that record.\n\n- Configures itself from the lookup it is bound to\n- Works whether or not the relationship was flagged as hierarchical in Dataverse\n- One Tab stop, with the arrow keys inside, in both layouts\n\nModel-driven apps only. It stands in for the built-in hierarchy view those apps removed in October 2025.",
   "category": "visualisation",
-  "hosts": ["model-driven"],
+  "hosts": [
+    "model-driven"
+  ],
   "tags": [
     "react",
     "hierarchy",
@@ -37,6 +39,11 @@
   "media": {
     "logo": "media/logo.png",
     "screenshots": [
+      "media/screenshot-chart-0.3.png",
+      "media/screenshot-chart-dark-0.3.png",
+      "media/screenshot-chart-hanging-0.3.png",
+      "media/screenshot-keyboard-0.3.png",
+      "media/screenshot-chart-narrow-0.3.png",
       "media/screenshot.png",
       "media/screenshot-expanded.png",
       "media/screenshot-fallback.png",
@@ -56,7 +63,9 @@
       "The tree is drawn without child-count badges, the way a form draws it on a lookup nobody marked hierarchical. The faster route a hierarchical lookup takes — one FetchXML query for the ancestors and a count per node — cannot run here: the demo’s Dataverse reports no hierarchical relationships and answers no FetchXML.",
       "Every preset sits on the same record, because the demo has one fixture and one form record. The top of the tree and a leaf are in the screenshots.",
       "Detail texts are the fixture’s strings. On a form they are the platform’s formatted values — a currency with its symbol, a choice as its label — which the fixture imitates.",
-      "Clicking a name opens nothing: the card calls navigation.openForm, and there is no form here to open. The harness reports the call and the tree stays."
+      "Clicking a name opens nothing: the card calls navigation.openForm, and there is no form here to open. The harness reports the call and the tree stays.",
+      "Pictures show as initials in every preset: the demo's Dataverse describes no image column for accounts, so the control asks for no picture, as it does on a form for a table without one. On a form each card shows the record's picture from the table's primary image column — the walkthrough in SPEC.md has three.",
+      "The keyboard works here as on a form: click a card or Tab to the tree, then the arrow keys, Home, End, * and a letter to find a name. Enter calls openForm, which the harness reports."
     ],
     "presets": [
       {
@@ -73,9 +82,49 @@
           ],
           "detailColumns": "address1_city, revenue",
           "initialDepth": 1,
-          "maxChildren": 50
+          "maxChildren": 50,
+          "layout": "tree",
+          "showImage": false
         },
         "isDefault": true
+      },
+      {
+        "slug": "org-chart",
+        "name": "Org chart",
+        "description": "The same record as an org chart: the chain above it, its subsidiaries side by side with two levels open, the record centred. Wider than the frame, it scrolls sideways inside the control; below 480px it is the tree.",
+        "props": {
+          "value": [
+            {
+              "id": "acc00000-0000-4000-8000-000000000002",
+              "name": "Contoso Europe",
+              "entityType": "account"
+            }
+          ],
+          "detailColumns": "address1_city, revenue",
+          "initialDepth": 2,
+          "maxChildren": 50,
+          "layout": "chart",
+          "showImage": false
+        }
+      },
+      {
+        "slug": "org-chart-initials",
+        "name": "Org chart with pictures on",
+        "description": "Pictures on: each card leads with the record's picture from the table's image column. Here every card shows initials, as a form does for a table with no image column.",
+        "props": {
+          "value": [
+            {
+              "id": "acc00000-0000-4000-8000-000000000002",
+              "name": "Contoso Europe",
+              "entityType": "account"
+            }
+          ],
+          "detailColumns": "address1_city",
+          "initialDepth": 1,
+          "maxChildren": 50,
+          "layout": "chart",
+          "showImage": true
+        }
       },
       {
         "slug": "deep",
@@ -91,7 +140,9 @@
           ],
           "detailColumns": "address1_city, revenue",
           "initialDepth": 3,
-          "maxChildren": 50
+          "maxChildren": 50,
+          "layout": "tree",
+          "showImage": false
         }
       },
       {
@@ -108,7 +159,9 @@
           ],
           "detailColumns": "",
           "initialDepth": 1,
-          "maxChildren": 50
+          "maxChildren": 50,
+          "layout": "tree",
+          "showImage": false
         }
       },
       {
@@ -125,7 +178,9 @@
           ],
           "detailColumns": "address1_city, revenue",
           "initialDepth": 1,
-          "maxChildren": 1
+          "maxChildren": 1,
+          "layout": "tree",
+          "showImage": false
         }
       }
     ]
